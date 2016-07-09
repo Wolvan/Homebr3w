@@ -27,6 +27,10 @@ Need help with the tool? Or maybe you'd like to modify it but have no idea how o
 
 [ksanislo](https://github.com/ksanislo) - for making TitleDB.com
 
+[yellows8](https://github.com/yellows8) - for the base of the Icon and Banner
+
+3DSGuy - for converting the Wii HBLauncher's theme to CWAV
+
 [TitleDB.com](https://titledb.com/) - as Database to pull the apps from
 
 [The people from the /hbg/ Discord](https://discord.gg/0ypvBFONRRBuHD2d) - Beta testing

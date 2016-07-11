@@ -402,6 +402,10 @@ function checkInstalled()
 	return tbl
 end
 
+function launchByTitleId(titleid)
+	System.launchCIA(tonumber(titleid:gsub("0004000", ""), 16), SDMC)
+end
+
 function clearImageCache()
 	for k,v in pairs(imageCache) do
 		Screen.freeImage(v)
@@ -460,7 +464,7 @@ function downloadAndInstall(titleid)
 				pad = Controls.read()
 				if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 					oldpad = pad
-					if System.checkBuild() == 1 then System.launchCIA(tonumber(parsedApplist[selectedCIA].titleid:gsub("0004000", ""), 16), SDMC) end
+					if System.checkBuild() == 1 then launchByTitleId(parsedApplist[selectedCIA].titleid) end
 				elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 					oldpad = pad
 					main()
@@ -657,7 +661,7 @@ function printTitleInfo(titleid)
 		Screen.debugPrint(5, 120, "Last update: "..title.create_time, WHITE, BOTTOM_SCREEN)
 		if installed[title.titleid] then Screen.debugPrint(5, 135, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
 		
-		
+		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 185, "Press X to start app", WHITE, BOTTOM_SCREEN) end
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 200, "Press A to download", WHITE, BOTTOM_SCREEN)
 		else Screen.debugPrint(5, 200, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
 		Screen.debugPrint(5, 215, "Press Start to access menu", WHITE, BOTTOM_SCREEN)

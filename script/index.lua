@@ -28,6 +28,7 @@ local APP_VERSION = "1.0.0"
 local APP_DIR = "/Homebr3w"
 local APP_CACHE = APP_DIR.."/Cache"
 local APP_CONFIG = APP_DIR.."/config.json"
+local APP_CIA_DIR = APP_DIR.."/CIAs"
 
 local API_URL = "http://homebr3w.wolvan.at/"
 
@@ -52,6 +53,10 @@ local config = {
 		text = "Enable Update Check",
 		value = false
 	},
+	deleteCIAAfterInstall = {
+		text = "Delete CIA after install",
+		value = true
+	},
 	downloadRetryCount = {
 		text = "Download Retries",
 		value = 3,
@@ -68,6 +73,12 @@ local blacklistedApps = {}
 local remVer = nil
 local locVer = nil
 local canUpdate = nil
+
+local imageCache = {}
+
+local selectedCIA = 1
+local menuOffset = 0
+local selection = 1
 
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
@@ -329,6 +340,17 @@ function getJSON(url)
 	end
 	return true, tbl
 end
+
+--[[
+	Get a title from the Applist by titleid
+]]--
+function getTitleByID(titleid)
+	for k,v in pairs(parsedApplist) do
+		if v.titleid == titleid then
+			return v
+		end
+	end
+end
 -- END UTILITY CODE DECLARATION
 
 -- BEGIN MAIN PROGRAM CODE
@@ -376,6 +398,186 @@ function checkInstalled()
 		tbl[v.titleid] = true
 	end
 	return tbl
+end
+
+function clearImageCache()
+	for k,v in pairs(imageCache) do
+		Screen.freeImage(v)
+		imageCache[k] = nil
+	end
+end
+
+function downloadAndInstall(titleid)
+	
+	oldpad = pad
+	Screen.waitVblankStart()
+	Screen.refresh()
+	Screen.clear(BOTTOM_SCREEN)
+	Screen.clear(TOP_SCREEN)
+	Screen.flip()
+	System.createDirectory(APP_CIA_DIR)
+	local title = getTitleByID(titleid)
+	if title then
+		Screen.debugPrint(5, 5, title.name, WHITE, TOP_SCREEN)
+		local line = 20
+		Screen.debugPrint(5, line, "Downloading...", WHITE, TOP_SCREEN)
+		local path = APP_CIA_DIR.."/"..title.titleid.."_"..title.name..".cia"
+		local downloadURL = API_URL.."getcia.php?titleid="..title.titleid
+		local success = getFile(path, downloadURL)
+		local tries = 0
+		while (tries < config.downloadRetryCount.value) and (not success) do
+			success = getFile(path, downloadURL)
+			tries = tries + 1
+		end
+		
+		if success then
+			Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+			if System.checkBuild() == 1 then
+				line = 35
+				Screen.debugPrint(5, line, "Installing...", WHITE, TOP_SCREEN)
+				System.installCIA(path, SDMC)
+				if config.deleteCIAAfterInstall.value then System.deleteFile(path) end
+				installed[titleid] = true
+				Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+				
+				Screen.debugPrint(5, 180, "Press A to launch the title", WHITE, BOTTOM_SCREEN)
+			else
+				Screen.debugPrint(5, 5, "Download finished! Unfortunately,", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 20, "the Ninjhax build of Homebr3w", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 35, "can not install the App", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 50, "automatically. Please use a", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 65, "titlemanager (like FBI) and ", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 80, "install the .cia manually, it's", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 95, "saved in the '/Homebr3w/CIAs'", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 110, "directory.", WHITE, BOTTOM_SCREEN)
+			end
+			
+			Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+			
+			while true do
+				pad = Controls.read()
+				if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+					oldpad = pad
+					if System.checkBuild() == 1 then System.launchCIA(tonumber(parsedApplist[selectedCIA].titleid:gsub("0004000", ""), 16), SDMC) end
+				elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+					oldpad = pad
+					main()
+				end
+				oldpad = pad
+			end
+		else
+			Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
+			Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+			
+			while true do
+				pad = Controls.read()
+				if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+					oldpad = pad
+					main()
+				end
+				oldpad = pad
+			end
+			return false
+		end
+	end
+	return false
+end
+
+function printTitleInfo(titleid)
+	Screen.clear(BOTTOM_SCREEN)
+	local title = getTitleByID(titleid)
+	if title then
+		if not imageCache[title.titleid] then
+			imageCache[title.titleid] = Screen.loadImage(APP_CACHE.."/"..titleid..".png")
+		end
+		Screen.drawImage(5, 5, imageCache[title.titleid], BOTTOM_SCREEN)
+		Screen.debugPrint(58, 20, title.name, WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(58, 35, "by "..title.author, WHITE, BOTTOM_SCREEN)
+		
+		Screen.debugPrint(5, 60, title.description, WHITE, BOTTOM_SCREEN)
+		
+		Screen.debugPrint(5, 105, "TID: "..title.titleid, WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 120, "Last update: "..title.create_time, WHITE, BOTTOM_SCREEN)
+		if installed[title.titleid] then Screen.debugPrint(5, 135, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
+		
+		
+		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 200, "Press A to download", WHITE, BOTTOM_SCREEN)
+		else Screen.debugPrint(5, 200, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
+	end
+end
+
+function printTitleList()
+	Screen.clear(BOTTOM_SCREEN)
+	local color = WHITE
+	local title = {}
+	for i = 1, 14, 1 do
+		title = parsedApplist[i + menuOffset]
+		if title then
+			color = WHITE
+			if installed[title.titleid] then
+				color = GREEN
+			end
+			if selection == i then
+				color = YELLOW
+			end
+			Screen.debugPrint(15, (i * 15) + 5, title.name, color, TOP_SCREEN)
+			Screen.debugPrint(5, (selection * 15) + 5, ">", YELLOW, TOP_SCREEN)
+		end
+	end
+end
+
+function printTopScreen()
+	Screen.clear(TOP_SCREEN)
+	Screen.debugPrint(5, 5, "Homebr3w v"..APP_VERSION.." - A homebrew browser", RED, TOP_SCREEN)
+	printTitleList()
+end
+
+function main()
+	oldpad = pad
+	Screen.waitVblankStart()
+	Screen.refresh()
+	printTopScreen()
+	printTitleInfo(parsedApplist[selectedCIA].titleid)
+	Screen.flip()
+	
+	while true do
+		pad = Controls.read()
+		if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
+			selectedCIA = selectedCIA + 1
+			selection = selection + 1
+			if (selectedCIA > #parsedApplist) then
+				selectedCIA = 1
+				menuOffset = 0
+				selection = 1
+			end
+			if selection > 14 then
+				selection = 14
+				menuOffset = menuOffset + 1
+			end
+		elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
+			selectedCIA = selectedCIA - 1
+			selection = selection - 1
+			if (selectedCIA < 1) then
+				selectedCIA = #parsedApplist
+				selection = 14
+				menuOffset = #parsedApplist - 14
+			end
+			if selection < 1 then
+				selection = 1
+				menuOffset = menuOffset - 1
+			end
+		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+			oldpad = pad
+			downloadAndInstall(parsedApplist[selectedCIA].titleid)
+		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
+			System.exit()
+		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
+			System.showHomeMenu()
+		end
+		checkForExit()
+		oldpad = pad
+		main()
+	end
 end
 
 function init()
@@ -446,8 +648,9 @@ function init()
 	installed = checkInstalled()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
-	
-	STOP()
+	Screen.clear(TOP_SCREEN)
+	Screen.clear(BOTTOM_SCREEN)
+	main()
 end
 
 -- END MAIN PROGRAM CODE

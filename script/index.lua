@@ -324,6 +324,7 @@ function getFile(path, downloadURL)
 		io.close(encTitleKeys)
 	end
 	if filesize == 0 then
+		System.deleteFile(path)
 		return false
 	end
 	return true
@@ -648,10 +649,10 @@ function printTitleInfo(titleid)
 	Screen.clear(BOTTOM_SCREEN)
 	local title = getTitleByID(titleid)
 	if title then
-		if not imageCache[title.titleid] then
+		if not imageCache[title.titleid] and System.doesFileExist(APP_CACHE.."/"..titleid..".png") then
 			imageCache[title.titleid] = Screen.loadImage(APP_CACHE.."/"..titleid..".png")
 		end
-		Screen.drawImage(5, 5, imageCache[title.titleid], BOTTOM_SCREEN)
+		if imageCache[title.titleid] then Screen.drawImage(5, 5, imageCache[title.titleid], BOTTOM_SCREEN) end
 		Screen.debugPrint(58, 20, title.name, WHITE, BOTTOM_SCREEN)
 		Screen.debugPrint(58, 35, "by "..title.author, WHITE, BOTTOM_SCREEN)
 		

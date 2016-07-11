@@ -1,17 +1,16 @@
 <?php
 	include "include.php";
 
-	$titleid = $_GET["titleid"];
-	$size = strtolower($_GET["size"]);
-
-	if (!$titleid) {
-		$titleid = "0004000000130800";
+	if (isset($_GET["titleid"])) {
+		$titleid = $_GET["titleid"];
+	} else {
+		$titleid = "0004000000130800"; // Default value so nothing breaks is my encTitleKeys.bin Updater
 	}
-	if ($size !== "small" && $size !== "large") {
-		$size = "small";
-	}
-	header("Content-Disposition: attachment; filename={$titleid}.txt");
+	
+	header("Content-Disposition: attachment; filename={$titleid}.png");
 	header("Content-Type: application/force-download");
 	header("Connection: close");
 	
-	echo http_req(array("action" => "list", fields => array("icon_".$size), where => array("titleid" => $titleid)));
+	$icon = http_req(array(), "images/{$titleid}.png");
+	
+	echo $icon;

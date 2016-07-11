@@ -51,7 +51,7 @@ local json = jsonfunction()
 local config = {
 	enableUpdateCheck = {
 		text = "Enable Update Check",
-		value = false
+		value = true
 	},
 	deleteCIAAfterInstall = {
 		text = "Delete CIA after install",
@@ -70,6 +70,7 @@ local parsedApplist = {}
 local installed = {}
 local blacklistedApps = {}
 
+local homebr3wInfo = {}
 local remVer = nil
 local locVer = nil
 local canUpdate = nil
@@ -79,6 +80,7 @@ local imageCache = {}
 local selectedCIA = 1
 local menuOffset = 0
 local selection = 1
+local screenHeightVar = 14
 local menu_selection = 1
 local options_selection = 1
 
@@ -673,7 +675,7 @@ function printTitleList()
 	Screen.clear(BOTTOM_SCREEN)
 	local color = WHITE
 	local title = {}
-	for i = 1, 14, 1 do
+	for i = 1, screenHeightVar, 1 do
 		title = parsedApplist[i + menuOffset]
 		if title then
 			color = WHITE
@@ -691,8 +693,12 @@ end
 
 function printTopScreen()
 	Screen.clear(TOP_SCREEN)
+	if canUpdate then
+		screenHeightVar = 13
+	end
 	Screen.debugPrint(5, 5, "Homebr3w v"..APP_VERSION.." - A homebrew browser", RED, TOP_SCREEN)
 	printTitleList()
+	if canUpdate then Screen.debugPrint(5, 220, "Update version "..remVer.major.."."..remVer.minor.."."..remVer.patch.." now available!", RED, TOP_SCREEN) end
 end
 
 function main()
@@ -713,8 +719,8 @@ function main()
 				menuOffset = 0
 				selection = 1
 			end
-			if selection > 14 then
-				selection = 14
+			if selection > screenHeightVar then
+				selection = screenHeightVar
 				menuOffset = menuOffset + 1
 			end
 		elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
@@ -722,8 +728,8 @@ function main()
 			selection = selection - 1
 			if (selectedCIA < 1) then
 				selectedCIA = #parsedApplist
-				selection = 14
-				menuOffset = #parsedApplist - 14
+				selection = screenHeightVar
+				menuOffset = #parsedApplist - screenHeightVar
 			end
 			if selection < 1 then
 				selection = 1
@@ -797,22 +803,45 @@ function init()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	line = 65
+	Screen.debugPrint(5, line, "Retrieving Homebr3w info...", WHITE, TOP_SCREEN)
+	tries = 0
+	success, tbl = false, {}
+	while (tries < config.downloadRetryCount.value) and (not success) do
+		tries = tries + 1
+		success, tbl = getJSON(API_URL.."meta.php")
+	end
+	
+	if not success then
+		showError("Error occured while fetching remote data\nPress A to try again\nPress B to return to "..home..".", function()
+			pad = Controls.read()
+			if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+				init()
+			elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+				System.exit()
+			end
+			oldpad = pad
+		end)
+	end
+	homebr3wInfo = tbl
+	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+	
+	line = 80
 	Screen.debugPrint(5, line, "Checking for Updates...", WHITE, TOP_SCREEN)
 	if config.enableUpdateCheck.value then
 		locVer = parseVersion(APP_VERSION)
-		remVer = parseVersion(parsed.current_version)
+		remVer = parseVersion(homebr3wInfo.current_version)
 		canUpdate = isUpdateAvailable(locVer, remVer)
 		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	else
 		Screen.debugPrint(270, line, "[SKIPPED]", YELLOW, TOP_SCREEN)
 	end
 	
-	line = 80
+	line = 95
 	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
 	checkCache(parsedApplist)
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
-	line = 95
+	line = 110
 	Screen.debugPrint(5, line, "Checking installed CIAs...", WHITE, TOP_SCREEN)
 	installed = checkInstalled()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)

@@ -79,6 +79,8 @@ local imageCache = {}
 local selectedCIA = 1
 local menuOffset = 0
 local selection = 1
+local menu_selection = 1
+local options_selection = 1
 
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
@@ -483,6 +485,161 @@ function downloadAndInstall(titleid)
 	return false
 end
 
+function optionsMenu()
+	oldpad = pad
+	Screen.waitVblankStart()
+	Screen.refresh()
+	
+	Screen.clear(TOP_SCREEN)
+	Screen.debugPrint(5, 5, "Options", YELLOW, TOP_SCREEN)
+	Screen.debugPrint(20, (options_selection * 15) + 5, ">", WHITE, TOP_SCREEN)
+	local config_keys = {}
+	local i = 1
+	for k,v in pairs(config) do
+		Screen.debugPrint(30, (i * 15) + 5, v.text, WHITE, TOP_SCREEN)
+		if type(v.value) == "boolean" then
+			if v.value then
+				Screen.debugPrint(350, (i * 15) + 5, "On", GREEN, TOP_SCREEN)
+			else
+				Screen.debugPrint(350, (i * 15) + 5, "Off", RED, TOP_SCREEN)
+			end
+		elseif type(v.value) == "number" then
+			Screen.debugPrint(350, (i * 15) + 5, v.value, YELLOW, TOP_SCREEN)
+		end
+		
+		config_keys[#config_keys+1] = k
+		i = i + 1
+	end
+	
+	Screen.clear(BOTTOM_SCREEN)
+	Screen.debugPrint(5, 110, "up/down - Select option", WHITE, BOTTOM_SCREEN)
+	Screen.debugPrint(5, 125, "left/right - Change setting", WHITE, BOTTOM_SCREEN)
+	Screen.debugPrint(5, 140, "A - Save", WHITE, BOTTOM_SCREEN)
+	Screen.debugPrint(5, 155, "B - Cancel", WHITE, BOTTOM_SCREEN)
+	Screen.flip()
+	
+	while true do
+		pad = Controls.read()
+		if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
+			options_selection = options_selection + 1
+			if (options_selection > #config_keys) then
+				options_selection = 1
+			end
+		elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
+			options_selection = options_selection - 1
+			if (options_selection < 1) then
+				options_selection = #config_keys
+			end
+		elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
+			local currentSetting = config[config_keys[options_selection]]
+			if type(currentSetting.value) == "boolean" then
+				currentSetting.value = not currentSetting.value
+			elseif type(currentSetting.value) == "number" then
+				currentSetting.value = currentSetting.value - 1
+				if currentSetting.minValue then
+					if currentSetting.value < currentSetting.minValue then currentSetting.value = currentSetting.minValue end
+				end
+				config[config_keys[options_selection]].value = currentSetting.value
+			end
+		elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
+			local currentSetting = config[config_keys[options_selection]]
+			if type(currentSetting.value) == "boolean" then
+				currentSetting.value = not currentSetting.value
+			elseif type(currentSetting.value) == "number" then
+				currentSetting.value = currentSetting.value + 1
+				if currentSetting.maxValue then
+					if currentSetting.value > currentSetting.maxValue then currentSetting.value = currentSetting.maxValue end
+				end
+				config[config_keys[options_selection]].value = currentSetting.value
+			end
+		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+			oldpad = pad
+			config_backup = deepcopy(config)
+			saveConfig()
+			menu()
+		elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+			oldpad = pad
+			config = deepcopy(config_backup)
+			menu()
+		end
+		oldpad = pad
+		optionsMenu()
+	end
+end
+
+function menu()
+	local menu_options = {
+		{
+			text = "Settings",
+			callback = function() optionsMenu() end
+		},
+		{
+			text = "Back to Applist",
+			callback = function() main() end
+		},
+		{
+			text = "Exit App",
+			callback = System.exit
+		}
+	}
+	local function printBottomScreen()
+		Screen.clear(BOTTOM_SCREEN)
+		if canUpdate then
+			Screen.debugPrint(5, 220, "Update version "..remVer.major.."."..remVer.minor.."."..remVer.patch.." now available!", RED, TOP_SCREEN)
+		end
+		Screen.debugPrint(5, 65, "Thanks to the following people:", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 80, "ksanislo - For TitleDB.com", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 95, "yellows8 - For icon and banner", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 110, "Rinnegatamante - For LPP3DS", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 125, "3DSGuy - Banner Sound", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 140, "You - For using this tool at all", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 155, "AFgt - For testing the updater", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 170, "Nai - For testing the updater", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 205, "v"..APP_VERSION, WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 220, "Homebr3w by Wolvan", WHITE, BOTTOM_SCREEN)
+	end
+	local function printTopScreen()
+		Screen.clear(TOP_SCREEN)
+		Screen.debugPrint(5, 5, "Homebr3w v"..APP_VERSION, YELLOW, TOP_SCREEN)
+		Screen.debugPrint(20, (menu_selection * 15) + 5, ">", WHITE, TOP_SCREEN)
+		for k,v in pairs(menu_options) do
+			Screen.debugPrint(30, (k * 15) + 5, v.text, WHITE, TOP_SCREEN)
+		end
+	end
+	
+	oldpad = pad
+	Screen.refresh()
+	Screen.waitVblankStart()
+	printTopScreen()
+	printBottomScreen()
+	Screen.flip()
+	
+	while true do
+		pad = Controls.read()
+		if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
+			menu_selection = menu_selection + 1
+			if (menu_selection > #menu_options) then
+				menu_selection = 1
+			end
+		elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
+			menu_selection = menu_selection - 1
+			if (menu_selection < 1) then
+				menu_selection = #menu_options
+			end
+		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+			oldpad = pad
+			menu_options[menu_selection].callback()
+		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
+			System.exit()
+		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
+			System.showHomeMenu()
+		end
+		checkForExit()
+		oldpad = pad
+		menu()
+	end
+end
+
 function printTitleInfo(titleid)
 	Screen.clear(BOTTOM_SCREEN)
 	local title = getTitleByID(titleid)
@@ -503,6 +660,7 @@ function printTitleInfo(titleid)
 		
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 200, "Press A to download", WHITE, BOTTOM_SCREEN)
 		else Screen.debugPrint(5, 200, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
+		Screen.debugPrint(5, 215, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	end
 end
 
@@ -569,6 +727,12 @@ function main()
 		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 			oldpad = pad
 			downloadAndInstall(parsedApplist[selectedCIA].titleid)
+		elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and installed[parsedApplist[selectedCIA].titleid] and System.checkBuild() == 1 then
+			oldpad = pad
+			launchByTitleId(parsedApplist[selectedCIA].titleid)
+		elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+			oldpad = pad
+			menu()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
 			System.exit()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then

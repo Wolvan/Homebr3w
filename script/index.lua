@@ -62,6 +62,8 @@ local config = {
 local config_backup = {}
 
 local parsedApplist = {}
+local installed = {}
+local blacklistedApps = {}
 
 local remVer = nil
 local locVer = nil
@@ -119,6 +121,8 @@ end
 	countTableElements() returns the actual number
 	if elements a table contains instead of only
 	the highest number index like # does.
+	table.filter is a Lua implementation of JS'
+	Array.filter() function
 ]]--
 function deepcopy(orig)
 	local orig_type = type(orig)
@@ -140,6 +144,13 @@ function countTableElements(tbl)
 		i = i + 1
 	end
 	return i
+end
+table.filter = function(workingTable, filterIter)
+	local out = {}
+	for index, value in pairs(workingTable) do
+		if filterIter(value, index, workingTable) then out[index] = value end
+	end
+	return out
 end
 
 --[[
@@ -321,6 +332,52 @@ end
 -- END UTILITY CODE DECLARATION
 
 -- BEGIN MAIN PROGRAM CODE
+function checkCache(tbl)
+	local function cache(titleid)
+		System.createDirectory(APP_CACHE)
+		local path = APP_CACHE.."/"..titleid..".png"
+		local downloadURL = API_URL.."geticon.php?titleid="..titleid
+		local success = getFile(path, downloadURL)
+		local tries = 0
+		while (tries < config.downloadRetryCount.value) and (not success) do
+			success = getFile(path, downloadURL)
+			tries = tries + 1
+		end
+		return success
+	end
+	local tid = "0004000000130800"
+	local failed = 0
+	for k,v in pairs(tbl) do
+		Screen.clear(BOTTOM_SCREEN)
+		tid = v.titleid
+		Screen.debugPrint(5, 5, "Checking Icon "..k.." of "..#tbl.."...", WHITE, BOTTOM_SCREEN)
+		if not System.doesFileExist(APP_CACHE.."/"..tid..".png") then
+			Screen.debugPrint(5, 20, "Downloading "..tid, WHITE, BOTTOM_SCREEN)
+			if not cache(tid) then failed = failed + 1 end
+		end
+		if failed > 0 then Screen.debugPrint(5, 35, "Failed downloading "..failed.." Icons", WHITE, BOTTOM_SCREEN) end
+	end
+	Screen.clear(BOTTOM_SCREEN)
+end
+
+function checkInstalled()
+	local sysapps = System.listCIA()
+	local installed = table.filter(parsedApplist, function (item)
+		local dectid = tonumber(item.titleid:gsub("0004000", ""), 16)
+		for k,v in pairs(sysapps) do
+			if dectid == v.unique_id then
+				return true
+			end
+		end
+		return false
+	end)
+	local tbl = {}
+	for k,v in pairs(installed) do
+		tbl[v.titleid] = true
+	end
+	return tbl
+end
+
 function init()
 	Screen.refresh()
 	Screen.clear(TOP_SCREEN)
@@ -378,6 +435,17 @@ function init()
 	else
 		Screen.debugPrint(270, line, "[SKIPPED]", YELLOW, TOP_SCREEN)
 	end
+	
+	line = 80
+	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
+	checkCache(parsedApplist)
+	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+	
+	line = 95
+	Screen.debugPrint(5, line, "Checking installed CIAs...", WHITE, TOP_SCREEN)
+	installed = checkInstalled()
+	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+	
 	
 	STOP()
 end

@@ -11,6 +11,6 @@
 	header("Content-Type: application/force-download");
 	header("Connection: close");
 	
-	$cia = file_get_contents($api_path."v0/proxy/{$titleid}");
+	$cia = http_req(array(), "v0/proxy/{$titleid}", true);
 	
 	echo $cia;

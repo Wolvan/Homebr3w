@@ -668,7 +668,9 @@ function printTitleInfo(titleid)
 		Screen.debugPrint(5, 60, title.description, WHITE, BOTTOM_SCREEN)
 		
 		Screen.debugPrint(5, 105, "TID: "..title.titleid, WHITE, BOTTOM_SCREEN)
-		Screen.debugPrint(5, 120, "Last update: "..title.create_time, WHITE, BOTTOM_SCREEN)
+		local lastUpdated = title.create_time
+		if title.update_time then lastUpdated = title.update_time end
+		Screen.debugPrint(5, 120, "Last update: "..lastUpdated, WHITE, BOTTOM_SCREEN)
 		if installed[title.titleid] then Screen.debugPrint(5, 135, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
 		
 		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 185, "Press X to start app", WHITE, BOTTOM_SCREEN) end

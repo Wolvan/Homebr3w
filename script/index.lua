@@ -167,6 +167,13 @@ table.filter = function(workingTable, filterIter)
 	end
 	return out
 end
+table.dump = function(tbl, filename)
+	if not filename then filename = "tbl_dump.json" end
+	local jsonString = json.encode(tbl, { indent = true })
+	local file = io.open("/"..filename, FCREATE)
+	io.write(file, 0, jsonString, jsonString:len())
+	io.close(file)
+end
 
 --[[
 	Functions to save and load config from a config

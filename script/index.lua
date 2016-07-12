@@ -830,6 +830,16 @@ function init()
 		end)
 	end
 	homebr3wInfo = tbl
+	blacklistedApps = homebr3wInfo.blacklisted
+	parsedApplist = table.filter(parsedApplist, function (item)
+		for k,v in pairs(blacklistedApps) do
+			if item.titleid == v then
+				return false
+			end
+		end
+		return true
+	end)
+	if not parsedApplist[1] then table.remove(parsedApplist, 1) end
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	line = 80

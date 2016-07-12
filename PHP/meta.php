@@ -23,7 +23,8 @@
 	}
 	
 	$meta = array(
-		current_version => $release->tag_name
+		"current_version" => $release->tag_name,
+		"blacklisted" => array()
 	);
 	
 	echo json_encode($meta);

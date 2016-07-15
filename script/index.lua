@@ -776,18 +776,32 @@ function printTitleInfo(titleid)
 			Screen.debugPrint(5, 75, title.description:sub(34), WHITE, BOTTOM_SCREEN)
 		end
 		
-		Screen.debugPrint(5, 105, "TID: "..title.titleid, WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 100, "TID: "..title.titleid, WHITE, BOTTOM_SCREEN)
 		local lastUpdated = title.create_time
 		if title.update_time then lastUpdated = title.update_time end
-		Screen.debugPrint(5, 120, "Last update: "..lastUpdated, WHITE, BOTTOM_SCREEN)
-		if installed[title.titleid] then Screen.debugPrint(5, 135, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
+		Screen.debugPrint(5, 115, "Last update: "..lastUpdated, WHITE, BOTTOM_SCREEN)
+		local size = title.size
+		local unit = "B"
+		if size >  1024 then -- Byte -> Kilobyte
+			size = size / 1024
+			unit = "KB"
+		end
+		if size > 1024 then -- Kilobyte -> Megabyte
+			size = size / 1024
+			unit = "MB"
+		end
+		if size > 1024 then -- Megabyte -> Gigabyte
+			size = size / 1024
+			unit = "GB"
+		end
+		Screen.debugPrint(5, 130, string.format("Size: %.2f%s", size, unit), WHITE, BOTTOM_SCREEN)
+		if installed[title.titleid] then Screen.debugPrint(5, 145, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
 		
-		
-		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 170, "Press X to start app", WHITE, BOTTOM_SCREEN) end
-		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 185, "Press A to download", WHITE, BOTTOM_SCREEN)
-		else Screen.debugPrint(5, 185, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
-		Screen.debugPrint(5, 215, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
+		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 160, "Press X to start app", GREEN, BOTTOM_SCREEN) end
+		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
+		else Screen.debugPrint(5, 195, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
 		Screen.debugPrint(5, 210, "Press L/R to sort list", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 225, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	end
 end
 

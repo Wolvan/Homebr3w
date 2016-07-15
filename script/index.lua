@@ -118,6 +118,12 @@ local config = {
 		value = 3,
 		minValue = 1,
 		maxValue = #sortModes
+	},
+	leftRightJump = {
+		text = "Left/Right Jump",
+		value = 10,
+		minValue = 1,
+		maxValue = 15
 	}
 }
 local config_backup = {}
@@ -870,7 +876,33 @@ function main()
 				selection = 1
 				menuOffset = menuOffset - 1
 			end
+		elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
+			selectedCIA = selectedCIA + config.leftRightJump.value
+			selection = selection + config.leftRightJump.value
+			if (selectedCIA > #parsedApplist) then
+				selectedCIA = 1
+				menuOffset = 0
+				selection = 1
+			end
+			if selection > screenHeightVar then
+				menuOffset = menuOffset + (selection - screenHeightVar)
+				selection = screenHeightVar
+			end
 		elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
+			selectedCIA = selectedCIA - config.leftRightJump.value
+			selection = selection - config.leftRightJump.value
+			if (selectedCIA < 1) then
+				selectedCIA = #parsedApplist
+				selection = screenHeightVar
+				menuOffset = #parsedApplist - screenHeightVar
+			end
+			if selection < 1 then
+				menuOffset = menuOffset + (selection - 1)
+				if menuOffset < 0 then
+					menuOffset = 0
+				end
+				selection = 1
+			end
 		elseif Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
 			sortMode = sortMode - 1
 			if sortMode < 1 then sortMode = #sortModes end

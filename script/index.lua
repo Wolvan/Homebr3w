@@ -153,7 +153,10 @@ end
 	if elements a table contains instead of only
 	the highest number index like # does.
 	table.filter is a Lua implementation of JS'
-	Array.filter() function
+	Array.filter() function.
+	table.dump is a debugging tool that allows
+	dumping contents of a table to file for later
+	inspection quickly.
 ]]--
 function deepcopy(orig)
 	local orig_type = type(orig)
@@ -391,6 +394,11 @@ end
 -- END UTILITY CODE DECLARATION
 
 -- BEGIN MAIN PROGRAM CODE
+--[[
+	Go through all of the icon files in the
+	Cache directory and download icons that
+	are missing.
+]]--
 function checkCache(tbl)
 	local function cache(titleid)
 		System.createDirectory(APP_CACHE)
@@ -419,6 +427,13 @@ function checkCache(tbl)
 	Screen.clear(BOTTOM_SCREEN)
 end
 
+--[[
+	Return a subset of the applist that
+	contains all titleIDs of apps that
+	are installed on the 3ds in a lookup
+	table kind of way
+	isInstalled[TITLEID] = true or nil(false)
+]]--
 function checkInstalled()
 	local sysapps = System.listCIA()
 	local installed = table.filter(parsedApplist, function (item)
@@ -437,10 +452,20 @@ function checkInstalled()
 	return tbl
 end
 
+--[[
+	Take a title ID, parse it into it's
+	hexadecimal value and launch it from
+	SD Card
+]]--
 function launchByTitleId(titleid)
 	System.launchCIA(tonumber(titleid:gsub("0004000", ""), 16), SDMC)
 end
 
+--[[
+	Clear the image cache that is being
+	created in RAM for showing the icons
+	on the details page
+]]--
 function clearImageCache()
 	for k,v in pairs(imageCache) do
 		Screen.freeImage(v)
@@ -448,6 +473,11 @@ function clearImageCache()
 	end
 end
 
+--[[
+	Take a TitleID, download the corresponding
+	.cia from TitleDB.com and then install it
+	to SD
+]]--
 function downloadAndInstall(titleid)
 	
 	oldpad = pad
@@ -679,6 +709,9 @@ function menu()
 	end
 end
 
+--[[
+	Print a title's info to the Bottom Screen
+]]--
 function printTitleInfo(titleid)
 	Screen.clear(BOTTOM_SCREEN)
 	local title = getTitleByID(titleid)

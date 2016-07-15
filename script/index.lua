@@ -84,6 +84,22 @@ local screenHeightVar = 14
 local menu_selection = 1
 local options_selection = 1
 
+local sortModes = {
+	{
+		text = "Sort by ID",
+		sortFunction = function(a, b)
+			return a.id < b.id
+		end
+	},
+	{
+		text = "Sort by alphabet",
+		sortFunction = function(a, b)
+			return a.name < b.name
+		end
+	}
+}
+local sortMode = 2
+
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
 	home = "Homebrew Launcher"
@@ -682,9 +698,11 @@ function printTitleInfo(titleid)
 		Screen.debugPrint(5, 120, "Last update: "..lastUpdated, WHITE, BOTTOM_SCREEN)
 		if installed[title.titleid] then Screen.debugPrint(5, 135, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
 		
-		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 185, "Press X to start app", WHITE, BOTTOM_SCREEN) end
-		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 200, "Press A to download", WHITE, BOTTOM_SCREEN)
-		else Screen.debugPrint(5, 200, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
+		
+		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 170, "Press X to start app", WHITE, BOTTOM_SCREEN) end
+		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 185, "Press A to download", WHITE, BOTTOM_SCREEN)
+		else Screen.debugPrint(5, 185, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
+		Screen.debugPrint(5, 200, "Press Left/Right to sort list", WHITE, BOTTOM_SCREEN)
 		Screen.debugPrint(5, 215, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	end
 end
@@ -753,6 +771,14 @@ function main()
 				selection = 1
 				menuOffset = menuOffset - 1
 			end
+		elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
+			sortMode = sortMode - 1
+			if sortMode < 1 then sortMode = #sortModes end
+			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
+		elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
+			sortMode = sortMode + 1
+			if sortMode > #sortModes then sortMode = 1 end
+			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
 		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 			oldpad = pad
 			downloadAndInstall(parsedApplist[selectedCIA].titleid)
@@ -818,6 +844,7 @@ function init()
 		end)
 	end
 	parsedApplist = tbl
+	table.sort(parsedApplist, sortModes[sortMode].sortFunction)
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	line = 65

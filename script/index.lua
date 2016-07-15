@@ -45,6 +45,56 @@ end
 local json = jsonfunction()
 
 --[[
+	Modes to sort the Applist
+]]--
+local sortModes = {
+	{
+		text = "ID (ascending)",
+		sortFunction = function(a, b)
+			return a.id < b.id
+		end
+	},
+	{
+		text = "ID (descending)",
+		sortFunction = function(a, b)
+			return a.id > b.id
+		end
+	},
+	{
+		text = "Alphabet (ascending)",
+		sortFunction = function(a, b)
+			local aName = a.name
+			local bName = b.name
+			aName = aName:sub(1,1):upper()..aName:sub(2)
+			bName = bName:sub(1,1):upper()..bName:sub(2)
+			return aName < bName
+		end
+	},
+	{
+		text = "Alphabet (descending)",
+		sortFunction = function(a, b)
+			local aName = a.name
+			local bName = b.name
+			aName = aName:sub(1,1):upper()..aName:sub(2)
+			bName = bName:sub(1,1):upper()..bName:sub(2)
+			return aName > bName
+		end
+	},
+	{
+		text = "Size (ascending)",
+		sortFunction = function(a, b)
+			return a.size < b.size
+		end
+	},
+	{
+		text = "Size (descending)",
+		sortFunction = function(a, b)
+			return a.size > b.size
+		end
+	}
+}
+
+--[[
 	Define various variables for later
 	use in the application
 ]]--
@@ -62,6 +112,12 @@ local config = {
 		value = 3,
 		minValue = 1,
 		maxValue = 10
+	},
+	defaultSortMode = {
+		text = "Default sorting mode",
+		value = 3,
+		minValue = 1,
+		maxValue = #sortModes
 	}
 }
 local config_backup = {}
@@ -80,25 +136,10 @@ local imageCache = {}
 local selectedCIA = 1
 local menuOffset = 0
 local selection = 1
-local screenHeightVar = 14
+local screenHeightVar = 13
 local menu_selection = 1
 local options_selection = 1
-
-local sortModes = {
-	{
-		text = "Sort by ID",
-		sortFunction = function(a, b)
-			return a.id < b.id
-		end
-	},
-	{
-		text = "Sort by alphabet",
-		sortFunction = function(a, b)
-			return a.name < b.name
-		end
-	}
-}
-local sortMode = 2
+local sortMode = 3
 
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
@@ -745,8 +786,8 @@ function printTitleInfo(titleid)
 		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 170, "Press X to start app", WHITE, BOTTOM_SCREEN) end
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 185, "Press A to download", WHITE, BOTTOM_SCREEN)
 		else Screen.debugPrint(5, 185, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
-		Screen.debugPrint(5, 200, "Press Left/Right to sort list", WHITE, BOTTOM_SCREEN)
 		Screen.debugPrint(5, 215, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 210, "Press L/R to sort list", WHITE, BOTTOM_SCREEN)
 	end
 end
 
@@ -773,11 +814,12 @@ end
 function printTopScreen()
 	Screen.clear(TOP_SCREEN)
 	if canUpdate then
-		screenHeightVar = 13
+		screenHeightVar = 12
 	end
 	Screen.debugPrint(5, 5, "Homebr3w v"..APP_VERSION.." - A homebrew browser", RED, TOP_SCREEN)
 	printTitleList()
-	if canUpdate then Screen.debugPrint(5, 220, "Update version "..remVer.major.."."..remVer.minor.."."..remVer.patch.." now available!", RED, TOP_SCREEN) end
+	if canUpdate then Screen.debugPrint(5, 205, "Update version "..remVer.major.."."..remVer.minor.."."..remVer.patch.." now available!", RED, TOP_SCREEN) end
+	Screen.debugPrint(5, 220, "Sort mode "..sortMode..": "..sortModes[sortMode].text, RED, TOP_SCREEN)
 end
 
 function main()
@@ -815,10 +857,11 @@ function main()
 				menuOffset = menuOffset - 1
 			end
 		elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
+		elseif Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
 			sortMode = sortMode - 1
 			if sortMode < 1 then sortMode = #sortModes end
 			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
-		elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
+		elseif Controls.check(pad, KEY_R) and not Controls.check(oldpad, KEY_R) then
 			sortMode = sortMode + 1
 			if sortMode > #sortModes then sortMode = 1 end
 			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
@@ -856,6 +899,7 @@ function init()
 	Screen.debugPrint(5, line, "Loading config...", WHITE, TOP_SCREEN)
 	if loadConfig() then
 		config_backup = deepcopy(config)
+		sortMode = config.defaultSortMode.value
 		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	else
 		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)

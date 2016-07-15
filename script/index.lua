@@ -687,10 +687,20 @@ function printTitleInfo(titleid)
 			imageCache[title.titleid] = Screen.loadImage(APP_CACHE.."/"..titleid..".png")
 		end
 		if imageCache[title.titleid] then Screen.drawImage(5, 5, imageCache[title.titleid], BOTTOM_SCREEN) end
-		Screen.debugPrint(58, 20, title.name, WHITE, BOTTOM_SCREEN)
-		Screen.debugPrint(58, 35, "by "..title.author, WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(58, 5, title.name, WHITE, BOTTOM_SCREEN)
+		if #title.author < 25 then
+			Screen.debugPrint(58, 20, "by "..title.author, WHITE, BOTTOM_SCREEN)
+		else
+			Screen.debugPrint(58, 20, "by "..title.author:sub(1, 25), WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(58, 35, title.author:sub(26), WHITE, BOTTOM_SCREEN)
+		end
 		
-		Screen.debugPrint(5, 60, title.description, WHITE, BOTTOM_SCREEN)
+		if #title.description < 33 then
+			Screen.debugPrint(5, 60, title.description, WHITE, BOTTOM_SCREEN)
+		else
+			Screen.debugPrint(5, 60, title.description:sub(1, 33), WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 75, title.description:sub(34), WHITE, BOTTOM_SCREEN)
+		end
 		
 		Screen.debugPrint(5, 105, "TID: "..title.titleid, WHITE, BOTTOM_SCREEN)
 		local lastUpdated = title.create_time

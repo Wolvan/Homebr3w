@@ -30,7 +30,7 @@ local APP_CACHE = APP_DIR.."/Cache"
 local APP_CONFIG = APP_DIR.."/config.json"
 local APP_CIA_DIR = APP_DIR.."/CIAs"
 
-local API_URL = "http://homebr3w.wolvan.at/"
+local API_URL = "https://api.titledb.com/"
 
 --[[
 	Libraries that I use get defined here
@@ -323,9 +323,11 @@ end
 --[[
 	Function to download File from Internet
 ]]--
-function getFile(path, downloadURL)
+function getFile(path, downloadURL, method, data)
+	if not method or (method ~= "GET" and method ~= "POST" and method ~= "HEAD") then method = "GET" end
+	if not data then data = {} end
 	System.deleteFile(path)
-	Network.downloadFile(downloadURL, path)
+	Network.downloadFile(downloadURL, path, "User-Agent: Homebr3w/"..APP_VERSION, method, json.encode(data))
 	local filesize = 0
 	if System.doesFileExist(path) then
 		local encTitleKeys = io.open(path, FREAD)
@@ -342,9 +344,16 @@ end
 	Function that gets a json string from
 	the web and decodes it into a table
 ]]--
-function getJSON(url)
+function getJSON(url, method, data)
+	if not method or (method ~= "GET" and method ~= "POST" and method ~= "HEAD") then method = "POST" end
+	if not data then
+		data = {
+			action = "list",
+			fields = { "id", "titleid", "author", "description", "name", "create_time", "update_time", "size", "mtime" }
+		}
+	end
 	local tbl = {}
-	local remoteData = Network.requestString(url)
+	local remoteData = Network.requestString(url, "User-Agent: Homebr3w/"..APP_VERSION, method, json.encode(data))
 	if remoteData ~= "" and remoteData ~= nil and type(remoteData) == "string" then
 		tbl = json.decode(remoteData)
 	else
@@ -370,7 +379,7 @@ function checkCache(tbl)
 	local function cache(titleid)
 		System.createDirectory(APP_CACHE)
 		local path = APP_CACHE.."/"..titleid..".png"
-		local downloadURL = API_URL.."geticon.php?titleid="..titleid
+		local downloadURL = API_URL.."images/"..titleid..".png"
 		local success = getFile(path, downloadURL)
 		local tries = 0
 		while (tries < config.downloadRetryCount.value) and (not success) do
@@ -438,7 +447,7 @@ function downloadAndInstall(titleid)
 		local line = 20
 		Screen.debugPrint(5, line, "Downloading...", WHITE, TOP_SCREEN)
 		local path = APP_CIA_DIR.."/"..title.titleid.."_"..title.name..".cia"
-		local downloadURL = API_URL.."getcia.php?titleid="..title.titleid
+		local downloadURL = API_URL.."v0/proxy/"..title.titleid
 		local success = getFile(path, downloadURL)
 		local tries = 0
 		while (tries < config.downloadRetryCount.value) and (not success) do
@@ -794,7 +803,7 @@ function init()
 	local success, tbl = false, {}
 	while (tries < config.downloadRetryCount.value) and (not success) do
 		tries = tries + 1
-		success, tbl = getJSON(API_URL.."applist.php")
+		success, tbl = getJSON(API_URL.."v0/")
 	end
 	
 	if not success then
@@ -817,7 +826,7 @@ function init()
 	success, tbl = false, {}
 	while (tries < config.downloadRetryCount.value) and (not success) do
 		tries = tries + 1
-		success, tbl = getJSON(API_URL.."meta.php")
+		success, tbl = getJSON("http://homebr3w.wolvan.at/meta.php")
 	end
 	
 	if not success then

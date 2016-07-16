@@ -571,12 +571,15 @@ function downloadAndInstall(titleid)
 			end
 			
 			Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 210, "Press Start to go to "..home, WHITE, BOTTOM_SCREEN)
 			
 			while true do
 				pad = Controls.read()
 				if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 					oldpad = pad
 					if System.checkBuild() == 1 then launchByTitleId(parsedApplist[selectedCIA].titleid) end
+				elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+					System.exit()
 				elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 					oldpad = pad
 					main()
@@ -586,12 +589,15 @@ function downloadAndInstall(titleid)
 		else
 			Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
 			Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 210, "Press Start to go to "..home, WHITE, BOTTOM_SCREEN)
 			
 			while true do
 				pad = Controls.read()
 				if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 					oldpad = pad
 					main()
+				elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+					System.exit()
 				end
 				oldpad = pad
 			end

@@ -1,6 +1,4 @@
-<?php
-	include "include.php";
-	
+<?php	
 	header("Content-Disposition: attachment; filename=meta.json");
 	header("Content-Type: application/force-download");
 	header("Connection: close");

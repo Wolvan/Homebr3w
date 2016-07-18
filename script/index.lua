@@ -774,11 +774,11 @@ function printTitleInfo(titleid)
 		end
 		if imageCache[title.titleid] then Screen.drawImage(5, 5, imageCache[title.titleid], BOTTOM_SCREEN) end
 		Screen.debugPrint(58, 5, title.name, WHITE, BOTTOM_SCREEN)
-		if #title.author < 25 then
+		if #title.author < 24 then
 			Screen.debugPrint(58, 20, "by "..title.author, WHITE, BOTTOM_SCREEN)
 		else
-			Screen.debugPrint(58, 20, "by "..title.author:sub(1, 25), WHITE, BOTTOM_SCREEN)
-			Screen.debugPrint(58, 35, title.author:sub(26), WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(58, 20, "by "..title.author:sub(1, 24), WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(58, 35, title.author:sub(25), WHITE, BOTTOM_SCREEN)
 		end
 		
 		if #title.description < 33 then

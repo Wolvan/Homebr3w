@@ -1065,7 +1065,7 @@ function init()
 	success, tbl = false, {}
 	while (tries < config.downloadRetryCount.value) and (not success) do
 		tries = tries + 1
-		success, tbl = getJSON("http://homebr3w.wolvan.at/meta.php")
+		success, tbl = getJSON("https://raw.githubusercontent.com/Wolvan/Homebr3w/master/data/blacklist.json")
 	end
 	
 	if not success then

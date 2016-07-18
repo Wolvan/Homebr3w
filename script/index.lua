@@ -132,7 +132,6 @@ local parsedApplist = {}
 local installed = {}
 local blacklistedApps = {}
 
-local homebr3wInfo = {}
 local remVer = nil
 local locVer = nil
 local canUpdate = nil
@@ -1024,18 +1023,54 @@ function init()
 	end
 	
 	if not success then
-		showError("Error occured while fetching remote data\nPress A to try again\nPress B to return to "..home..".", function()
-			pad = Controls.read()
-			if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
-				init()
-			elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
-				System.exit()
-			end
-			oldpad = pad
-		end)
+		blacklistedApps = nil
+		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
+	else
+		blacklistedApps = tbl.blacklisted
+		saveTable(APP_DIR.."/blacklist.json", blacklistedApps)
+		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	end
-	homebr3wInfo = tbl
-	blacklistedApps = homebr3wInfo.blacklisted
+	
+	line = 80
+	Screen.debugPrint(5, line, "Checking for Updates...", WHITE, TOP_SCREEN)
+	if config.enableUpdateCheck.value then
+		tries = 0
+		success, tbl = false, {}
+		while (tries < config.downloadRetryCount.value) and (not success) do
+			tries = tries + 1
+			success, tbl = getJSON("https://api.github.com/repos/Wolvan/Homebr3w/releases/latest")
+		end
+		
+		if not success then
+			Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
+		else
+			locVer = parseVersion(APP_VERSION)
+			remVer = parseVersion(tbl.current_version)
+			canUpdate = isUpdateAvailable(locVer, remVer)
+			Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+		end
+	else
+		Screen.debugPrint(270, line, "[SKIPPED]", YELLOW, TOP_SCREEN)
+	end
+	
+	line = 95
+	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
+	checkCache(parsedApplist)
+	if not blacklistedApps then
+		local loadedBlacklist = loadTable(APP_DIR.."/blacklisted.json", {})
+		if loadedBlacklist then blacklistedApps = loadedBlacklist 
+		else blacklistedApps = {} end
+	end
+	mtimeCache = loadTable(APP_DIR.."/mtime.json", {}) or {}
+	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+	
+	line = 110
+	Screen.debugPrint(5, line, "Checking installed CIAs...", WHITE, TOP_SCREEN)
+	installed = checkInstalled()
+	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+	
+	line = 125
+	Screen.debugPrint(5, line, "Finishing init process...", WHITE, TOP_SCREEN)
 	parsedApplist = table.filter(parsedApplist, function (item)
 		for k,v in pairs(blacklistedApps) do
 			if item.titleid == v then
@@ -1045,27 +1080,6 @@ function init()
 		return true
 	end)
 	if not parsedApplist[1] then table.remove(parsedApplist, 1) end
-	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	
-	line = 80
-	Screen.debugPrint(5, line, "Checking for Updates...", WHITE, TOP_SCREEN)
-	if config.enableUpdateCheck.value then
-		locVer = parseVersion(APP_VERSION)
-		remVer = parseVersion(homebr3wInfo.current_version)
-		canUpdate = isUpdateAvailable(locVer, remVer)
-		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	else
-		Screen.debugPrint(270, line, "[SKIPPED]", YELLOW, TOP_SCREEN)
-	end
-	
-	line = 95
-	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
-	checkCache(parsedApplist)
-	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	
-	line = 110
-	Screen.debugPrint(5, line, "Checking installed CIAs...", WHITE, TOP_SCREEN)
-	installed = checkInstalled()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	Screen.clear(TOP_SCREEN)

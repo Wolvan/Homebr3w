@@ -23,6 +23,7 @@ local WHITE = Color.new(255,255,255)
 local YELLOW = Color.new(255,205,66)
 local RED = Color.new(255,0,0)
 local GREEN = Color.new(55,255,0)
+local BLUE = Color.new(70,50,250)
 
 local APP_VERSION = "1.1.0"
 local APP_DIR = "/Homebr3w"
@@ -137,6 +138,7 @@ local locVer = nil
 local canUpdate = nil
 
 local imageCache = {}
+local mtimeCache = {}
 
 local selectedCIA = 1
 local menuOffset = 0
@@ -582,9 +584,12 @@ function downloadAndInstall(titleid)
 				if config.deleteCIAAfterInstall.value then System.deleteFile(path) end
 				installed[titleid] = true
 				Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-				
+				mtimeCache[title.titleid] = title.mtime
+				saveTable(APP_DIR.."/mtime.json", mtimeCache)
 				Screen.debugPrint(5, 180, "Press A to launch the title", WHITE, BOTTOM_SCREEN)
 			else
+				mtimeCache[title.titleid] = title.mtime
+				saveTable(APP_DIR.."/mtime.json", mtimeCache)
 				Screen.debugPrint(5, 5, "Download finished! Unfortunately,", WHITE, BOTTOM_SCREEN)
 				Screen.debugPrint(5, 20, "the Ninjhax build of Homebr3w", WHITE, BOTTOM_SCREEN)
 				Screen.debugPrint(5, 35, "can not install the App", WHITE, BOTTOM_SCREEN)
@@ -714,11 +719,41 @@ function optionsMenu()
 	end
 end
 
+function markAsLatest()
+	oldpad = pad
+	Screen.waitVblankStart()
+	Screen.refresh()
+	Screen.clear(TOP_SCREEN)
+	Screen.debugPrint(5, 5, "Marking all installed Apps as latest...", WHITE, TOP_SCREEN)
+	Screen.clear(BOTTOM_SCREEN)
+	Screen.flip()
+	
+	for k,v in pairs(checkInstalled()) do
+		if v and not mtimeCache[k] then
+			mtimeCache[k] = getTitleByID(k).mtime
+		end
+	end
+	saveTable(APP_DIR.."/mtime.json", mtimeCache)
+	Screen.debugPrint(5, 20, "Done! Press A to continue.", WHITE, TOP_SCREEN)
+	
+	while true do
+		pad = Controls.read()
+		if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+			menu()
+		end
+		oldpad = pad
+	end
+end
+
 function menu()
 	local menu_options = {
 		{
 			text = "Settings",
 			callback = function() optionsMenu() end
+		},
+		{
+			text = "Mark unknown versions as latest",
+			callback = function() markAsLatest() end
 		},
 		{
 			text = "Back to Applist",
@@ -832,7 +867,14 @@ function printTitleInfo(titleid)
 			unit = "GB"
 		end
 		Screen.debugPrint(5, 130, string.format("Size: %.2f%s", size, unit), WHITE, BOTTOM_SCREEN)
-		if installed[title.titleid] then Screen.debugPrint(5, 145, "Installed! You can install this again.", GREEN, BOTTOM_SCREEN) end
+		if installed[title.titleid] and not mtimeCache[title.titleid] then
+			Screen.debugPrint(5, 145, "Version unknown! Install to fix this.", YELLOW, BOTTOM_SCREEN)
+		elseif installed[title.titleid] and mtimeCache[title.titleid] < title.mtime then
+			Screen.debugPrint(5, 145, "App Update available!", RED, BOTTOM_SCREEN)
+		elseif installed[title.titleid] and mtimeCache[title.titleid] >= title.mtime then
+			Screen.debugPrint(5, 145, "Latest version installed!", GREEN, BOTTOM_SCREEN)
+		end
+		if installed[title.titleid] then  end
 		
 		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 160, "Press X to start app", GREEN, BOTTOM_SCREEN) end
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
@@ -850,14 +892,18 @@ function printTitleList()
 		title = parsedApplist[i + menuOffset]
 		if title then
 			color = WHITE
-			if installed[title.titleid] then
+			if installed[title.titleid] and not mtimeCache[title.titleid] then
+				color = YELLOW
+			elseif installed[title.titleid] and mtimeCache[title.titleid] < title.mtime then
+				color = RED
+			elseif installed[title.titleid] and mtimeCache[title.titleid] >= title.mtime then
 				color = GREEN
 			end
 			if selection == i then
-				color = YELLOW
+				color = BLUE
 			end
 			Screen.debugPrint(15, (i * 15) + 5, title.name, color, TOP_SCREEN)
-			Screen.debugPrint(5, (selection * 15) + 5, ">", YELLOW, TOP_SCREEN)
+			Screen.debugPrint(5, (selection * 15) + 5, ">", BLUE, TOP_SCREEN)
 		end
 	end
 end

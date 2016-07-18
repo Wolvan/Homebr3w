@@ -242,9 +242,55 @@ table.dump = function(tbl, filename)
 end
 
 --[[
+	Functions to save and load any table to or from
+	a JSON encoded file somewhere on the SD card
+]]--
+function saveTable(filename, tbl)
+	if not tbl then tbl = {} end
+	if not filename then filename = APP_DIR.."/tbl.json" end
+	local jsonString = json.encode(tbl, { indent = true })
+	local currentPath = ""
+	local splitPath = filename:split("/")
+	for i = 1, #splitPath - 1 do
+		if splitPath[i] then
+			currentPath = currentPath.."/"..splitPath[i]
+			System.createDirectory(currentPath)
+		end
+	end
+	local file = io.open(filename, FCREATE)
+	io.write(file, 0, jsonString, jsonString:len())
+	io.close(file)
+end
+function loadTable(filename, defaulttbl)
+	if not filename then filename = APP_DIR.."/tbl.json" end
+	if not defaulttbl then defaulttbl = {} end
+	if not System.doesFileExist(filename) then
+		saveTable(filename, defaulttbl)
+	end
+	local file = io.open(filename, FREAD)
+	
+	local filesize = 0
+	filesize = tonumber(io.size(file))
+	if filesize == 0 then
+		io.close(file)
+		saveTable(filename, defaulttbl)
+		file = io.open(filename, FREAD)
+	end
+	
+	local file_contents = io.read(file, 0, tonumber(io.size(file)))
+	io.close(file)
+	local loaded_config = json.decode(file_contents)
+	if type(loaded_config) == "table" then
+		return loaded_config
+	else
+		return nil
+	end
+end
+
+--[[
 	Functions to save and load config from a config
 	file. The config table gets encoded as JSON file
-	and saved to the SD. 
+	and saved to the SD.
 	Loading reads that file (or creates it if it 
 	doesn't exist before reading), decodes the JSON
 	and then overwrites each value of the config
@@ -253,30 +299,10 @@ end
 	yet just use the default value set in the config table.
 ]]--
 function saveConfig()
-	local jsonString = json.encode(config, { indent = true })
-	System.createDirectory(APP_DIR)
-	local file = io.open(APP_CONFIG, FCREATE)
-	io.write(file, 0, jsonString, jsonString:len())
-	io.close(file)
+	saveTable(APP_CONFIG, config)
 end
 function loadConfig()
-	local configPath = APP_CONFIG
-	if not System.doesFileExist(configPath) then
-		saveConfig()
-	end
-	local file = io.open(configPath, FREAD)
-	
-	local filesize = 0
-	filesize = tonumber(io.size(file))
-	if filesize == 0 then
-		io.close(file)
-		saveConfig()
-		file = io.open(configPath, FREAD)
-	end
-	
-	local file_contents = io.read(file, 0, tonumber(io.size(file)))
-	io.close(file)
-	local loaded_config = json.decode(file_contents)
+	local loaded_config = loadTable(APP_CONFIG, config)
 	if type(loaded_config) == "table" then
 		for k,v in pairs(loaded_config) do
 			config[k] = v

@@ -926,6 +926,8 @@ function main()
 		elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
 			oldpad = pad
 			menu()
+		elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
+			System.exit()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
 			System.exit()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then

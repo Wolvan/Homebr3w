@@ -199,6 +199,10 @@ local config = {
 		value = 10,
 		minValue = 1,
 		maxValue = 15
+	},
+	groupInstalledApps = {
+		text = "Group installed apps",
+		value = true
 	}
 }
 local config_backup = {}
@@ -671,6 +675,33 @@ function getInstalledState(tid)
 	end
 	return INSTALLED_STATE.NOT_INSTALLED
 end
+
+--[[
+	Sort app list with selected sorting mode
+	and then group them by install state if
+	the config option is enabled
+]]
+function sortAppList()
+	table.sort(parsedApplist, sortModes[sortMode].sortFunction)
+	if config.groupInstalledApps.value then
+		local appsByState = {}
+		local iS = INSTALLED_STATE.NOT_INSTALLED
+		for k,v in pairs(parsedApplist) do
+			iS = getInstalledState(v.titleid)
+			if not appsByState[iS] then appsByState[iS] = {} end
+			table.insert(appsByState[iS], v)
+		end
+		local tbl = {}
+		for k,v in pairs(appsByState) do
+			for i,j in pairs(v) do
+				table.insert(tbl, j)
+			end
+		end
+		parsedApplist = tbl
+	end
+end
+
+--[[
 	Take a title ID, parse it into it's
 	hexadecimal value and launch it from
 	SD Card
@@ -852,6 +883,7 @@ function optionsMenu()
 			oldpad = pad
 			config_backup = deepcopy(config)
 			saveConfig()
+			sortAppList()
 			menu()
 		elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 			oldpad = pad
@@ -1130,15 +1162,15 @@ function main()
 		elseif Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
 			sortMode = sortMode - 1
 			if sortMode < 1 then sortMode = #sortModes end
-			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
+			sortAppList()
 		elseif Controls.check(pad, KEY_R) and not Controls.check(oldpad, KEY_R) then
 			sortMode = sortMode + 1
 			if sortMode > #sortModes then sortMode = 1 end
-			table.sort(parsedApplist, sortModes[sortMode].sortFunction)
+			sortAppList()
 		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 			oldpad = pad
 			downloadAndInstall(parsedApplist[selectedCIA].titleid)
-		elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and installed[parsedApplist[selectedCIA].titleid] and System.checkBuild() == 1 then
+		elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and getInstalledState(parsedApplist[selectedCIA].titleid) ~= INSTALLED_STATE.NOT_INSTALLED and System.checkBuild() == 1 then
 			oldpad = pad
 			launchByTitleId(parsedApplist[selectedCIA].titleid)
 		elseif Controls.check(pad, KEY_Y) and not Controls.check(oldpad, KEY_Y) then
@@ -1205,7 +1237,6 @@ function init()
 		end)
 	end
 	parsedApplist = tbl
-	table.sort(parsedApplist, sortModes[sortMode].sortFunction)
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	line = 65
@@ -1252,7 +1283,7 @@ function init()
 	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
 	checkCache(parsedApplist)
 	if not blacklistedApps then
-		local loadedBlacklist = loadTable(APP_DIR.."/blacklisted.json", {})
+		local loadedBlacklist = loadTable(APP_DIR.."/blacklist.json", {})
 		if loadedBlacklist then blacklistedApps = loadedBlacklist 
 		else blacklistedApps = {} end
 	end
@@ -1275,6 +1306,7 @@ function init()
 		return true
 	end)
 	if not parsedApplist[1] then table.remove(parsedApplist, 1) end
+	sortAppList()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	
 	Screen.clear(TOP_SCREEN)

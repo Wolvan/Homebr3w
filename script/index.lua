@@ -30,6 +30,12 @@ local APP_DIR = "/Homebr3w"
 local APP_CACHE = APP_DIR.."/Cache"
 local APP_CONFIG = APP_DIR.."/config.json"
 local APP_CIA_DIR = APP_DIR.."/CIAs"
+local INSTALLED_STATE = {
+	NOT_INSTALLED = 4,
+	LATEST_VERSION = 3,
+	OUTDATED_VERSION = 1,
+	VERSION_UNKNOWN = 2
+}
 
 local API_URL = "https://api.titledb.com/"
 
@@ -644,6 +650,27 @@ function checkInstalled()
 end
 
 --[[
+	Return the install state of an application
+	All values come from
+	INSTALLED_STATE =
+	{
+		VERSION_UNKNOWN,
+		OUTDATED_VERSION,
+		LATEST_VERSION,
+		NOT_INSTALLED
+	}
+]]--
+function getInstalledState(tid)
+	local title = getTitleByID(tid)
+	if installed[title.titleid] and not mtimeCache[title.titleid] then
+		return INSTALLED_STATE.VERSION_UNKNOWN
+	elseif installed[title.titleid] and mtimeCache[title.titleid] < title.mtime then
+		return INSTALLED_STATE.OUTDATED_VERSION
+	elseif installed[title.titleid] and mtimeCache[title.titleid] >= title.mtime then
+		return INSTALLED_STATE.LATEST_VERSION
+	end
+	return INSTALLED_STATE.NOT_INSTALLED
+end
 	Take a title ID, parse it into it's
 	hexadecimal value and launch it from
 	SD Card
@@ -984,16 +1011,16 @@ function printTitleInfo(titleid)
 			unit = "GB"
 		end
 		Screen.debugPrint(5, 130, string.format("Size: %.2f%s", size, unit), WHITE, BOTTOM_SCREEN)
-		if installed[title.titleid] and not mtimeCache[title.titleid] then
+		local installedState = getInstalledState(title.titleid)
+		if installedState == INSTALLED_STATE.VERSION_UNKNOWN then
 			Screen.debugPrint(5, 145, "Version unknown! Install to fix this.", YELLOW, BOTTOM_SCREEN)
-		elseif installed[title.titleid] and mtimeCache[title.titleid] < title.mtime then
+		elseif installedState == INSTALLED_STATE.OUTDATED_VERSION then
 			Screen.debugPrint(5, 145, "App Update available!", RED, BOTTOM_SCREEN)
-		elseif installed[title.titleid] and mtimeCache[title.titleid] >= title.mtime then
+		elseif installedState == INSTALLED_STATE.LATEST_VERSION then
 			Screen.debugPrint(5, 145, "Latest version installed!", GREEN, BOTTOM_SCREEN)
 		end
-		if installed[title.titleid] then  end
 		
-		if System.checkBuild() == 1 and installed[title.titleid] then Screen.debugPrint(5, 160, "Press X to start app", GREEN, BOTTOM_SCREEN) end
+		if System.checkBuild() == 1 and installedState ~= INSTALLED_STATE.NOT_INSTALLED then Screen.debugPrint(5, 160, "Press X to start app", GREEN, BOTTOM_SCREEN) end
 		
 		Screen.debugPrint(5, 180, "Press Y to show QR Code", WHITE, BOTTOM_SCREEN)
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
@@ -1011,11 +1038,12 @@ function printTitleList()
 		title = parsedApplist[i + menuOffset]
 		if title then
 			color = WHITE
-			if installed[title.titleid] and not mtimeCache[title.titleid] then
+			local installedState = getInstalledState(title.titleid)
+			if installedState == INSTALLED_STATE.VERSION_UNKNOWN then
 				color = YELLOW
-			elseif installed[title.titleid] and mtimeCache[title.titleid] < title.mtime then
+			elseif installedState == INSTALLED_STATE.OUTDATED_VERSION then
 				color = RED
-			elseif installed[title.titleid] and mtimeCache[title.titleid] >= title.mtime then
+			elseif installedState == INSTALLED_STATE.LATEST_VERSION then
 				color = GREEN
 			end
 			if selection == i then

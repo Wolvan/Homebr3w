@@ -1212,7 +1212,7 @@ function init()
 			Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
 		else
 			locVer = parseVersion(APP_VERSION)
-			remVer = parseVersion(tbl.current_version)
+			remVer = parseVersion(tbl.tag_name)
 			canUpdate = isUpdateAvailable(locVer, remVer)
 			Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 		end

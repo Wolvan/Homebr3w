@@ -236,6 +236,8 @@ end
 local pad = Controls.read()
 local oldpad = pad
 local kbState = nil
+local scrollTimer = Timer.new()
+local isScrolling = false
 
 --[[
 	Poor Man's Breakpoint
@@ -1158,38 +1160,54 @@ function main()
 	Screen.debugPrint(5, 225, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	Screen.flip()
 	
+	local scrollDelay = 50
+	local timeUntilScrolling = scrollDelay + 550
 	while true do
 		pad = Controls.read()
 		if #parsedApplist > 0 then
-			if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
-				selectedCIA = selectedCIA + 1
-				selection = selection + 1
-				if (selectedCIA > #parsedApplist) then
-					selectedCIA = 1
-					menuOffset = 0
-					selection = 1
+			if Controls.check(pad, KEY_DDOWN) then
+				if Timer.getTime(scrollTimer) > timeUntilScrolling then
+					isScrolling = true
+					Timer.reset(scrollTimer)
 				end
-				if selection > screenHeightVar then
-					selection = screenHeightVar
-					menuOffset = menuOffset + 1
-				elseif selection > #parsedApplist then
-					selection = 1
-				end
-			elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
-				selectedCIA = selectedCIA - 1
-				selection = selection - 1
-				if (selectedCIA < 1) then
-					selectedCIA = #parsedApplist
-					if #parsedApplist < screenHeightVar then
-						selection = #parsedApplist
-					else
-						selection = screenHeightVar
+				if (Timer.getTime(scrollTimer) > scrollDelay and isScrolling) or not Controls.check(oldpad, KEY_DDOWN) then
+					Timer.reset(scrollTimer)
+					selectedCIA = selectedCIA + 1
+					selection = selection + 1
+					if (selectedCIA > #parsedApplist) then
+						selectedCIA = 1
+						menuOffset = 0
+						selection = 1
 					end
-					menuOffset = #parsedApplist - screenHeightVar
+					if selection > screenHeightVar then
+						selection = screenHeightVar
+						menuOffset = menuOffset + 1
+					elseif selection > #parsedApplist then
+						selection = 1
+					end
 				end
-				if selection < 1 then
-					selection = 1
-					menuOffset = menuOffset - 1
+			elseif Controls.check(pad, KEY_DUP) then
+				if Timer.getTime(scrollTimer) > timeUntilScrolling then
+					isScrolling = true
+					Timer.reset(scrollTimer)
+				end
+				if (Timer.getTime(scrollTimer) > scrollDelay and isScrolling) or not Controls.check(oldpad, KEY_DUP) then
+					Timer.reset(scrollTimer)
+					selectedCIA = selectedCIA - 1
+					selection = selection - 1
+					if (selectedCIA < 1) then
+						selectedCIA = #parsedApplist
+						if #parsedApplist < screenHeightVar then
+							selection = #parsedApplist
+						else
+							selection = screenHeightVar
+						end
+						menuOffset = #parsedApplist - screenHeightVar
+					end
+					if selection < 1 then
+						selection = 1
+						menuOffset = menuOffset - 1
+					end
 				end
 			elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
 				selectedCIA = selectedCIA + config.leftRightJump.value
@@ -1243,6 +1261,9 @@ function main()
 				System.exit()
 			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
 				System.showHomeMenu()
+			else
+				isScrolling = false
+				Timer.reset(scrollTimer)
 			end
 		else
 			if Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then

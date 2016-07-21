@@ -725,9 +725,12 @@ function sortAppList()
 			table.insert(appsByState[iS], v)
 		end
 		local tbl = {}
-		for k,v in pairs(appsByState) do
-			for i,j in pairs(v) do
-				table.insert(tbl, j)
+		local debugTBL = {}
+		for i = 1, 4 do
+			if appsByState[i] then
+				for i,j in pairs(appsByState[i]) do
+					table.insert(tbl, j)
+				end
 			end
 		end
 		parsedApplist = tbl

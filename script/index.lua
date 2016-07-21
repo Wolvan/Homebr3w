@@ -1057,6 +1057,10 @@ function menu()
 		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 			oldpad = pad
 			menu_options[menu_selection].callback()
+		elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+			oldpad = pad
+			sortAppList()
+			main()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
 			System.exit()
 		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then

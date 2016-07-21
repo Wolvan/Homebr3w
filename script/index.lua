@@ -208,6 +208,7 @@ local config = {
 local config_backup = {}
 
 local parsedApplist = {}
+local fullApplist = {}
 local installed = {}
 local blacklistedApps = {}
 
@@ -225,6 +226,7 @@ local screenHeightVar = 13
 local menu_selection = 1
 local options_selection = 1
 local sortMode = 3
+local currentFilter = ""
 
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
@@ -233,6 +235,7 @@ end
 
 local pad = Controls.read()
 local oldpad = pad
+local kbState = nil
 
 --[[
 	Poor Man's Breakpoint
@@ -682,6 +685,14 @@ end
 	the config option is enabled
 ]]
 function sortAppList()
+	local parsedApplistFiltered = table.filter(fullApplist, function(item)
+		return item.name:lower():find(currentFilter:lower())
+	end)
+	local parsedApplistKeyFixed = {}
+	for k,v in pairs(parsedApplistFiltered) do
+		table.insert(parsedApplistKeyFixed, v)
+	end
+	parsedApplist = parsedApplistKeyFixed
 	table.sort(parsedApplist, sortModes[sortMode].sortFunction)
 	if config.groupInstalledApps.value then
 		local appsByState = {}
@@ -895,6 +906,36 @@ function optionsMenu()
 	end
 end
 
+function searchApp()
+	Screen.waitVblankStart()
+	Screen.refresh()
+	Screen.clear(TOP_SCREEN)
+	Screen.debugPrint(5, 5, "Filter apps by name", WHITE, TOP_SCREEN)
+	Screen.debugPrint(5, 20, "Current Filter:", WHITE, TOP_SCREEN)
+	Screen.debugPrint(5, 35, Keyboard.getInput(), WHITE, TOP_SCREEN)
+	Screen.clear(BOTTOM_SCREEN)
+	if kbState ~= FINISHED then
+		kbState = Keyboard.getState()
+		Keyboard.show()
+		if kbState ~= NOT_PRESSED then
+			if kbState == CLEANED then
+				currentFilter = ""
+				sortAppList()
+				menu()
+			end
+		end
+	else
+		currentFilter = Keyboard.getInput()
+		selectedCIA = 1
+		selection = 1
+		menuOffset = 0
+		sortAppList()
+		menu()
+	end
+	Screen.flip()
+	searchApp()
+end
+
 function markAsLatest()
 	oldpad = pad
 	Screen.waitVblankStart()
@@ -924,6 +965,13 @@ end
 function menu()
 	local menu_options = {
 		{
+			text = "Set search filter",
+			callback = function() 
+				kbState = nil
+				Keyboard.show()
+				searchApp()
+			end
+		},{
 			text = "Settings",
 			callback = function() optionsMenu() end
 		},
@@ -1057,13 +1105,15 @@ function printTitleInfo(titleid)
 		Screen.debugPrint(5, 180, "Press Y to show QR Code", WHITE, BOTTOM_SCREEN)
 		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
 		else Screen.debugPrint(5, 195, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
-		Screen.debugPrint(5, 210, "Press L/R to sort list", WHITE, BOTTOM_SCREEN)
-		Screen.debugPrint(5, 225, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	end
 end
 
 function printTitleList()
 	Screen.clear(BOTTOM_SCREEN)
+	if #parsedApplist < 0 then return end
+	if #parsedApplist < screenHeightVar then
+		menuOffset = 0
+	end
 	local color = WHITE
 	local title = {}
 	for i = 1, screenHeightVar, 1 do
@@ -1103,87 +1153,116 @@ function main()
 	Screen.waitVblankStart()
 	Screen.refresh()
 	printTopScreen()
-	printTitleInfo(parsedApplist[selectedCIA].titleid)
+	if #parsedApplist > 0 then printTitleInfo(parsedApplist[selectedCIA].titleid) end
+	Screen.debugPrint(5, 210, "Press L/R to sort list", WHITE, BOTTOM_SCREEN)
+	Screen.debugPrint(5, 225, "Press Start to access menu", WHITE, BOTTOM_SCREEN)
 	Screen.flip()
 	
 	while true do
 		pad = Controls.read()
-		if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
-			selectedCIA = selectedCIA + 1
-			selection = selection + 1
-			if (selectedCIA > #parsedApplist) then
-				selectedCIA = 1
-				menuOffset = 0
-				selection = 1
-			end
-			if selection > screenHeightVar then
-				selection = screenHeightVar
-				menuOffset = menuOffset + 1
-			end
-		elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
-			selectedCIA = selectedCIA - 1
-			selection = selection - 1
-			if (selectedCIA < 1) then
-				selectedCIA = #parsedApplist
-				selection = screenHeightVar
-				menuOffset = #parsedApplist - screenHeightVar
-			end
-			if selection < 1 then
-				selection = 1
-				menuOffset = menuOffset - 1
-			end
-		elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
-			selectedCIA = selectedCIA + config.leftRightJump.value
-			selection = selection + config.leftRightJump.value
-			if (selectedCIA > #parsedApplist) then
-				selectedCIA = 1
-				menuOffset = 0
-				selection = 1
-			end
-			if selection > screenHeightVar then
-				menuOffset = menuOffset + (selection - screenHeightVar)
-				selection = screenHeightVar
-			end
-		elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
-			selectedCIA = selectedCIA - config.leftRightJump.value
-			selection = selection - config.leftRightJump.value
-			if (selectedCIA < 1) then
-				selectedCIA = #parsedApplist
-				selection = screenHeightVar
-				menuOffset = #parsedApplist - screenHeightVar
-			end
-			if selection < 1 then
-				menuOffset = menuOffset + (selection - 1)
-				if menuOffset < 0 then
+		if #parsedApplist > 0 then
+			if Controls.check(pad, KEY_DDOWN) and not Controls.check(oldpad, KEY_DDOWN) then
+				selectedCIA = selectedCIA + 1
+				selection = selection + 1
+				if (selectedCIA > #parsedApplist) then
+					selectedCIA = 1
 					menuOffset = 0
+					selection = 1
 				end
-				selection = 1
+				if selection > screenHeightVar then
+					selection = screenHeightVar
+					menuOffset = menuOffset + 1
+				elseif selection > #parsedApplist then
+					selection = 1
+				end
+			elseif Controls.check(pad, KEY_DUP) and not Controls.check(oldpad, KEY_DUP) then
+				selectedCIA = selectedCIA - 1
+				selection = selection - 1
+				if (selectedCIA < 1) then
+					selectedCIA = #parsedApplist
+					if #parsedApplist < screenHeightVar then
+						selection = #parsedApplist
+					else
+						selection = screenHeightVar
+					end
+					menuOffset = #parsedApplist - screenHeightVar
+				end
+				if selection < 1 then
+					selection = 1
+					menuOffset = menuOffset - 1
+				end
+			elseif Controls.check(pad, KEY_DRIGHT) and not Controls.check(oldpad, KEY_DRIGHT) then
+				selectedCIA = selectedCIA + config.leftRightJump.value
+				selection = selection + config.leftRightJump.value
+				if (selectedCIA > #parsedApplist) then
+					selectedCIA = 1
+					menuOffset = 0
+					selection = 1
+				end
+				if selection > screenHeightVar then
+					menuOffset = menuOffset + (selection - screenHeightVar)
+					selection = screenHeightVar
+				end
+			elseif Controls.check(pad, KEY_DLEFT) and not Controls.check(oldpad, KEY_DLEFT) then
+				selectedCIA = selectedCIA - config.leftRightJump.value
+				selection = selection - config.leftRightJump.value
+				if (selectedCIA < 1) then
+					selectedCIA = #parsedApplist
+					selection = screenHeightVar
+					menuOffset = #parsedApplist - screenHeightVar
+				end
+				if selection < 1 then
+					menuOffset = menuOffset + (selection - 1)
+					if menuOffset < 0 then
+						menuOffset = 0
+					end
+					selection = 1
+				end
+			elseif Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
+				sortMode = sortMode - 1
+				if sortMode < 1 then sortMode = #sortModes end
+				sortAppList()
+			elseif Controls.check(pad, KEY_R) and not Controls.check(oldpad, KEY_R) then
+				sortMode = sortMode + 1
+				if sortMode > #sortModes then sortMode = 1 end
+				sortAppList()
+			elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+				oldpad = pad
+				downloadAndInstall(parsedApplist[selectedCIA].titleid)
+			elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and getInstalledState(parsedApplist[selectedCIA].titleid) ~= INSTALLED_STATE.NOT_INSTALLED and System.checkBuild() == 1 then
+				oldpad = pad
+				launchByTitleId(parsedApplist[selectedCIA].titleid)
+			elseif Controls.check(pad, KEY_Y) and not Controls.check(oldpad, KEY_Y) then
+				drawQRToTopScreen(parsedApplist[selectedCIA].titleid)
+			elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+				oldpad = pad
+				menu()
+			elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
+				System.exit()
+			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
+				System.exit()
+			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
+				System.showHomeMenu()
 			end
-		elseif Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
-			sortMode = sortMode - 1
-			if sortMode < 1 then sortMode = #sortModes end
-			sortAppList()
-		elseif Controls.check(pad, KEY_R) and not Controls.check(oldpad, KEY_R) then
-			sortMode = sortMode + 1
-			if sortMode > #sortModes then sortMode = 1 end
-			sortAppList()
-		elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
-			oldpad = pad
-			downloadAndInstall(parsedApplist[selectedCIA].titleid)
-		elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and getInstalledState(parsedApplist[selectedCIA].titleid) ~= INSTALLED_STATE.NOT_INSTALLED and System.checkBuild() == 1 then
-			oldpad = pad
-			launchByTitleId(parsedApplist[selectedCIA].titleid)
-		elseif Controls.check(pad, KEY_Y) and not Controls.check(oldpad, KEY_Y) then
-			drawQRToTopScreen(parsedApplist[selectedCIA].titleid)
-		elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
-			oldpad = pad
-			menu()
-		elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
-			System.exit()
-		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
-			System.exit()
-		elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
-			System.showHomeMenu()
+		else
+			if Controls.check(pad, KEY_L) and not Controls.check(oldpad, KEY_L) then
+				sortMode = sortMode - 1
+				if sortMode < 1 then sortMode = #sortModes end
+				sortAppList()
+			elseif Controls.check(pad, KEY_R) and not Controls.check(oldpad, KEY_R) then
+				sortMode = sortMode + 1
+				if sortMode > #sortModes then sortMode = 1 end
+				sortAppList()
+			elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+				oldpad = pad
+				menu()
+			elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
+				System.exit()
+			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
+				System.exit()
+			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
+				System.showHomeMenu()
+			end
 		end
 		checkForExit()
 		oldpad = pad
@@ -1306,6 +1385,7 @@ function init()
 		return true
 	end)
 	if not parsedApplist[1] then table.remove(parsedApplist, 1) end
+	fullApplist = deepcopy(parsedApplist)
 	sortAppList()
 	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	

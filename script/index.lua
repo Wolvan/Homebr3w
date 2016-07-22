@@ -579,6 +579,7 @@ end
 ]]--
 function checkLibraries()
 	local function getLib(lib)
+		System.createDirectory(APP_DIR)
 		System.createDirectory(APP_LIBS_DIR)
 		local path = APP_LIBS_DIR.."/"..lib.filename
 		if lib.type == LIB_TYPES.ARCHIVE then

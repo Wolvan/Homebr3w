@@ -25,7 +25,7 @@ local RED = Color.new(255,0,0)
 local GREEN = Color.new(55,255,0)
 local BLUE = Color.new(70,50,250)
 
-local APP_VERSION = "1.2.0"
+local APP_VERSION = "1.3.0"
 local APP_DIR = "/Homebr3w"
 local APP_CACHE = APP_DIR.."/Cache"
 local APP_CONFIG = APP_DIR.."/config.json"

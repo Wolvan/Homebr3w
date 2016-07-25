@@ -133,6 +133,26 @@ local sortModes = {
 		sortFunction = function(a, b)
 			return a.size > b.size
 		end
+	},
+	{
+		text = "Newest updates first",
+		sortFunction = function(a, b)
+			local lastUpdated_a = a.create_time
+			if a.update_time then lastUpdated_a = a.update_time end
+			local lastUpdated_b = b.create_time
+			if b.update_time then lastUpdated_b = b.update_time end
+			return lastUpdated_a > lastUpdated_b
+		end
+	},
+	{
+		text = "Newest updates last",
+		sortFunction = function(a, b)
+			local lastUpdated_a = a.create_time
+			if a.update_time then lastUpdated_a = a.update_time end
+			local lastUpdated_b = b.create_time
+			if b.update_time then lastUpdated_b = b.update_time end
+			return lastUpdated_a < lastUpdated_b
+		end
 	}
 }
 

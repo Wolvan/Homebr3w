@@ -730,7 +730,7 @@ end
 ]]
 function sortAppList()
 	local parsedApplistFiltered = table.filter(fullApplist, function(item)
-		return item.name:lower():find(currentFilter:lower())
+		return item.name:lower():find(currentFilter:lower()) or item.author:lower():find(currentFilter:lower()) or item.description:lower():find(currentFilter:lower())
 	end)
 	local parsedApplistKeyFixed = {}
 	for k,v in pairs(parsedApplistFiltered) do

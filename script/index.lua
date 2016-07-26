@@ -215,6 +215,7 @@ local menu_selection = 1
 local options_selection = 1
 local sortMode = 3
 local currentFilter = ""
+local uninstallMode = false
 
 local home = "Homemenu"
 if System.checkBuild() ~= 1 then
@@ -844,6 +845,7 @@ function downloadAndInstall(titleid)
 					System.exit()
 				elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 					oldpad = pad
+					sortAppList()
 					main()
 				end
 				oldpad = pad
@@ -857,6 +859,7 @@ function downloadAndInstall(titleid)
 				pad = Controls.read()
 				if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
 					oldpad = pad
+					sortAppList()
 					main()
 				elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
 					System.exit()
@@ -867,6 +870,96 @@ function downloadAndInstall(titleid)
 		end
 	end
 	return false
+end
+
+--[[
+	Take a TitleID, download the corresponding
+	.cia from TitleDB.com and then install it
+	to SD
+]]--
+function uninstall(titleid)
+	
+	oldpad = pad
+	Screen.waitVblankStart()
+	Screen.refresh()
+	Screen.clear(BOTTOM_SCREEN)
+	Screen.clear(TOP_SCREEN)
+	Screen.flip()
+	local title = getTitleByID(titleid)
+	if title then
+		if System.checkBuild() == 1 then
+			Screen.debugPrint(5, 5, title.name, WHITE, TOP_SCREEN)
+			line = 20
+			Screen.debugPrint(5, line, "Uninstalling...", WHITE, TOP_SCREEN)
+			local dectid = tonumber(title.titleid:gsub("0004000", ""), 16)
+			local accessID = nil
+			for k,v in pairs(System.listCIA()) do
+				if dectid == v.unique_id then
+					accessID = v.access_id
+				end
+			end
+			if accessID then
+				System.uninstallCIA(accessID, SDMC)
+				installed[titleid] = false
+				Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
+				mtimeCache[title.titleid] = nil
+				saveTable(APP_DIR.."/mtime.json", mtimeCache)
+			else
+				Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
+				Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+				Screen.debugPrint(5, 210, "Press Start to go to "..home, WHITE, BOTTOM_SCREEN)
+				
+				while true do
+					pad = Controls.read()
+					if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+						oldpad = pad
+						sortAppList()
+						main()
+					elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+						System.exit()
+					end
+					oldpad = pad
+				end
+			end
+		else
+			Screen.debugPrint(5, 5, "Ninjhax builds are not able to", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 20, "install or uninstall Apps,", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 35, "please use the .cia or .3ds", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 50, "version of Homebr3w or use a", WHITE, BOTTOM_SCREEN)
+			Screen.debugPrint(5, 65, "titlemanager (like FBI)", WHITE, BOTTOM_SCREEN)
+		end
+		
+		Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 210, "Press Start to go to "..home, WHITE, BOTTOM_SCREEN)
+		
+		while true do
+			pad = Controls.read()
+			if Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+				System.exit()
+			elseif Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+				oldpad = pad
+				sortAppList()
+				main()
+			end
+			oldpad = pad
+		end
+	else
+		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
+		Screen.debugPrint(5, 195, "Press B to go to title list", WHITE, BOTTOM_SCREEN)
+		Screen.debugPrint(5, 210, "Press Start to go to "..home, WHITE, BOTTOM_SCREEN)
+		
+		while true do
+			pad = Controls.read()
+			if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+				oldpad = pad
+				sortAppList()
+				main()
+			elseif Controls.check(pad, KEY_START) and not Controls.check(oldpad, KEY_START) then
+				System.exit()
+			end
+			oldpad = pad
+		end
+	end
 end
 
 function optionsMenu()
@@ -1153,8 +1246,15 @@ function printTitleInfo(titleid)
 		if System.checkBuild() == 1 and installedState ~= INSTALLED_STATE.NOT_INSTALLED then Screen.debugPrint(5, 160, "Press X to start app", GREEN, BOTTOM_SCREEN) end
 		
 		Screen.debugPrint(5, 180, "Press Y to show QR Code", WHITE, BOTTOM_SCREEN)
-		if System.checkBuild() ~= 1 then Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
-		else Screen.debugPrint(5, 195, "Press A to download and install", WHITE, BOTTOM_SCREEN) end
+		if System.checkBuild() ~= 1 then
+			Screen.debugPrint(5, 195, "Press A to download", WHITE, BOTTOM_SCREEN)
+		else
+			if uninstallMode and installedState ~= INSTALLED_STATE.NOT_INSTALLED then
+				Screen.debugPrint(5, 195, "Press A to uninstall", RED, BOTTOM_SCREEN)
+			else
+				Screen.debugPrint(5, 195, "Press A to download and install", WHITE, BOTTOM_SCREEN)
+			end
+		end
 	end
 end
 
@@ -1294,7 +1394,11 @@ function main()
 				sortAppList()
 			elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
 				oldpad = pad
-				downloadAndInstall(parsedApplist[selectedCIA].titleid)
+				if uninstallMode and getInstalledState(parsedApplist[selectedCIA].titleid) ~= INSTALLED_STATE.NOT_INSTALLED then
+					uninstall(parsedApplist[selectedCIA].titleid)
+				else
+					downloadAndInstall(parsedApplist[selectedCIA].titleid)
+				end
 			elseif Controls.check(pad, KEY_X) and not Controls.check(oldpad, KEY_X) and getInstalledState(parsedApplist[selectedCIA].titleid) ~= INSTALLED_STATE.NOT_INSTALLED and System.checkBuild() == 1 then
 				oldpad = pad
 				launchByTitleId(parsedApplist[selectedCIA].titleid)
@@ -1304,7 +1408,7 @@ function main()
 				oldpad = pad
 				menu()
 			elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
-				System.exit()
+				uninstallMode = not uninstallMode
 			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
 				System.exit()
 			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then
@@ -1326,7 +1430,7 @@ function main()
 				oldpad = pad
 				menu()
 			elseif Controls.check(pad, KEY_SELECT) and not Controls.check(oldpad, KEY_SELECT) then
-				System.exit()
+				uninstallMode = not uninstallMode
 			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() ~= 1 then
 				System.exit()
 			elseif Controls.check(pad, KEY_HOME) and System.checkBuild() == 1 then

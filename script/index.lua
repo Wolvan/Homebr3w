@@ -206,6 +206,7 @@ local canUpdate = nil
 
 local imageCache = {}
 local mtimeCache = {}
+local lastUpdateCache = {}
 
 local selectedCIA = 1
 local menuOffset = 0
@@ -590,6 +591,19 @@ function drawQRToTopScreen(tid)
 		end
 	end
 end
+
+--[[
+	Take a Datestring in the format
+	YYYY-MM-DD hh:mm:ss and turn it into
+	a unix timestamp
+]]--
+function makeUnixTimestampFromTitle(title)
+	local timeToConvert = title.create_time
+	if title.update_time then timeToConvert = title.update_time end
+	local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
+	local runyear, runmonth, runday, runhour, runminute, runseconds = timeToConvert:match(pattern)
+	return os.time({year = runyear, month = runmonth, day = runday, hour = runhour, min = runminute, sec = runseconds})
+end
 -- END UTILITY CODE DECLARATION
 
 -- BEGIN MAIN PROGRAM CODE
@@ -661,17 +675,23 @@ function checkCache(tbl)
 		return success
 	end
 	local tid = "0004000000130800"
+	local lastUpdated = 0
 	local failed = 0
 	for k,v in pairs(tbl) do
 		Screen.clear(BOTTOM_SCREEN)
 		tid = v.titleid
+		lastUpdated = makeUnixTimestampFromTitle(v)
 		Screen.debugPrint(5, 5, "Checking Icon "..k.." of "..#tbl.."...", WHITE, BOTTOM_SCREEN)
-		if not System.doesFileExist(APP_CACHE.."/"..tid..".png") then
+		if not System.doesFileExist(APP_CACHE.."/"..tid..".png") or (lastUpdateCache[tid] and lastUpdateCache[tid] < lastUpdated) then
 			Screen.debugPrint(5, 20, "Downloading "..tid, WHITE, BOTTOM_SCREEN)
-			if not cache(tid) then failed = failed + 1 end
+			if not cache(tid) then failed = failed + 1
+			else lastUpdateCache[tid] = lastUpdated end
+		elseif System.doesFileExist(APP_CACHE.."/"..tid..".png") and not lastUpdateCache[tid] then
+			lastUpdateCache[tid] = lastUpdated
 		end
 		if failed > 0 then Screen.debugPrint(5, 35, "Failed downloading "..failed.." Icons", WHITE, BOTTOM_SCREEN) end
 	end
+	saveTable(APP_CACHE.."/last_updated.json", lastUpdateCache)
 	Screen.clear(BOTTOM_SCREEN)
 end
 
@@ -1541,6 +1561,7 @@ function init()
 	
 	line = 110
 	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
+	lastUpdateCache = loadTable(APP_CACHE.."/last_updated.json", lastUpdateCache)
 	checkCache(parsedApplist)
 	if not blacklistedApps then
 		local loadedBlacklist = loadTable(APP_DIR.."/blacklist.json", {})

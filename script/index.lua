@@ -486,6 +486,7 @@ function checkForExit()
 	end
 end
 
+local useragent = "Connection: keep-alive\nUser-Agent: Homebr3w/"..APP_VERSION
 --[[
 	Function to download File from Internet
 ]]--
@@ -497,7 +498,7 @@ function getFile(path, downloadURL, method, data)
 	if libraries["dkjson"] then
 		jsondata = libraries["dkjson"].encode(data)
 	end
-	Network.downloadFile(downloadURL, path, "User-Agent: Homebr3w/"..APP_VERSION, method, jsondata)
+	Network.downloadFile(downloadURL, path, useragent, method, jsondata)
 	local filesize = 0
 	if System.doesFileExist(path) then
 		local encTitleKeys = io.open(path, FREAD)
@@ -523,7 +524,11 @@ function getJSON(url, method, data)
 		}
 	end
 	local tbl = {}
-	local remoteData = Network.requestString(url, "User-Agent: Homebr3w/"..APP_VERSION, method, libraries["dkjson"].encode(data))
+	local jsondata = "[]"
+	if libraries["dkjson"] then
+		jsondata = libraries["dkjson"].encode(data)
+	end
+	local remoteData = Network.requestString(url, useragent, method, jsondata)
 	if remoteData ~= "" and remoteData ~= nil and type(remoteData) == "string" then
 		tbl = libraries["dkjson"].decode(remoteData)
 	else

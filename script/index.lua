@@ -506,15 +506,17 @@ function getFile(path, downloadURL, method, data)
 	if not data then data = {} end
 	System.deleteFile(path)
 	local jsondata = "[]"
-	if libraries["dkjson"] then
-		jsondata = libraries["dkjson"].encode(data)
-	end
 	if config.enableAnalytics.value then
 		if downloadURL:find("?") then
 			if dataStore.client_uuid then downloadURL = downloadURL.."&homebr3wUUID="..dataStore.client_uuid end
 		else
 			if dataStore.client_uuid then downloadURL = downloadURL.."?homebr3wUUID="..dataStore.client_uuid end
 		end
+		jsondata = '{"homebr3wUUID":"'..dataStore.client_uuid..'"}'
+		data.homebr3wUUID = dataStore.client_uuid
+	end
+	if libraries["dkjson"] then
+		jsondata = libraries["dkjson"].encode(data)
 	end
 	Network.downloadFile(downloadURL, path, useragent, method, jsondata)
 	local filesize = 0
@@ -543,15 +545,17 @@ function getJSON(url, method, data)
 	end
 	local tbl = {}
 	local jsondata = "[]"
-	if libraries["dkjson"] then
-		jsondata = libraries["dkjson"].encode(data)
-	end
 	if config.enableAnalytics.value then
 		if url:find("?") then
 			if dataStore.client_uuid then url = url.."&homebr3wUUID="..dataStore.client_uuid end
 		else
 			if dataStore.client_uuid then url = url.."?homebr3wUUID="..dataStore.client_uuid end
 		end
+		jsondata = '{"homebr3wUUID":"'..dataStore.client_uuid..'"}'
+		data.homebr3wUUID = dataStore.client_uuid
+	end
+	if libraries["dkjson"] then
+		jsondata = libraries["dkjson"].encode(data)
 	end
 	local remoteData = Network.requestString(url, useragent, method, jsondata)
 	if remoteData ~= "" and remoteData ~= nil and type(remoteData) == "string" then

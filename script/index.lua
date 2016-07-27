@@ -83,6 +83,12 @@ local REQUIRED_LIBRARIES = {
 		filename = "qrencode.lua",
 		downloadPath = "https://raw.githubusercontent.com/speedata/luaqrcode/master/qrencode.lua",
 		type = LIB_TYPES.LIBRARY
+	},
+	{
+		name = "uuid",
+		filename = "uuid.lua",
+		downloadPath = "https://raw.githubusercontent.com/Tieske/uuid/master/src/uuid.lua",
+		type = LIB_TYPES.LIBRARY
 	}
 }
 
@@ -190,10 +196,15 @@ local config = {
 	groupInstalledApps = {
 		text = "Group installed apps",
 		value = true
+	},
+	enableAnalytics = {
+		text = "Enable analytics",
+		value = true
 	}
 }
 local config_backup = {}
 local libraries = {}
+local dataStore = {}
 
 local parsedApplist = {}
 local fullApplist = {}
@@ -498,6 +509,13 @@ function getFile(path, downloadURL, method, data)
 	if libraries["dkjson"] then
 		jsondata = libraries["dkjson"].encode(data)
 	end
+	if config.enableAnalytics.value then
+		if downloadURL:find("?") then
+			if dataStore.client_uuid then downloadURL = downloadURL.."&homebr3wUUID="..dataStore.client_uuid end
+		else
+			if dataStore.client_uuid then downloadURL = downloadURL.."?homebr3wUUID="..dataStore.client_uuid end
+		end
+	end
 	Network.downloadFile(downloadURL, path, useragent, method, jsondata)
 	local filesize = 0
 	if System.doesFileExist(path) then
@@ -527,6 +545,13 @@ function getJSON(url, method, data)
 	local jsondata = "[]"
 	if libraries["dkjson"] then
 		jsondata = libraries["dkjson"].encode(data)
+	end
+	if config.enableAnalytics.value then
+		if url:find("?") then
+			if dataStore.client_uuid then url = url.."&homebr3wUUID="..dataStore.client_uuid end
+		else
+			if dataStore.client_uuid then url = url.."?homebr3wUUID="..dataStore.client_uuid end
+		end
 	end
 	local remoteData = Network.requestString(url, useragent, method, jsondata)
 	if remoteData ~= "" and remoteData ~= nil and type(remoteData) == "string" then
@@ -803,6 +828,17 @@ function clearImageCache()
 		Screen.freeImage(v)
 		imageCache[k] = nil
 	end
+end
+
+--[[
+	Create a UUID that can be used for tracking
+]]--
+function createUUID()
+	local uuidLib = deepcopy(libraries["uuid"])
+	math.randomseed(os.time())
+	math.random(); math.random(); math.random()
+	uuidLib.randomseed(math.random(1000))
+	return uuidLib()
 end
 
 --[[
@@ -1496,6 +1532,11 @@ function init()
 	if loadConfig() then
 		config_backup = deepcopy(config)
 		sortMode = config.defaultSortMode.value
+		dataStore = loadTable(APP_DIR.."/data.json", dataStore)
+		if not dataStore.client_uuid then
+			dataStore.client_uuid = createUUID()
+			saveTable(APP_DIR.."/data.json", dataStore)
+		end
 		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	else
 		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)

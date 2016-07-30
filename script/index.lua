@@ -507,13 +507,14 @@ function getFile(path, downloadURL, method, data)
 	System.deleteFile(path)
 	local jsondata = "[]"
 	if config.enableAnalytics.value then
+		local cUUID = dataStore.client_uuid or "00000000-0000-0000-0000-000000000000"
 		if downloadURL:find("?") then
-			if dataStore.client_uuid then downloadURL = downloadURL.."&homebr3wUUID="..dataStore.client_uuid end
+			if cUUID then downloadURL = downloadURL.."&homebr3wUUID="..cUUID end
 		else
-			if dataStore.client_uuid then downloadURL = downloadURL.."?homebr3wUUID="..dataStore.client_uuid end
+			if cUUID then downloadURL = downloadURL.."?homebr3wUUID="..cUUID end
 		end
-		jsondata = '{"homebr3wUUID":"'..dataStore.client_uuid..'"}'
-		data.homebr3wUUID = dataStore.client_uuid
+		jsondata = '{"homebr3wUUID":"'..cUUID..'"}'
+		data.homebr3wUUID = cUUID
 	end
 	if libraries["dkjson"] then
 		jsondata = libraries["dkjson"].encode(data)
@@ -546,13 +547,14 @@ function getJSON(url, method, data)
 	local tbl = {}
 	local jsondata = "[]"
 	if config.enableAnalytics.value then
+		local cUUID = dataStore.client_uuid or "00000000-0000-0000-0000-000000000000"
 		if url:find("?") then
-			if dataStore.client_uuid then url = url.."&homebr3wUUID="..dataStore.client_uuid end
+			if cUUID then url = url.."&homebr3wUUID="..cUUID end
 		else
-			if dataStore.client_uuid then url = url.."?homebr3wUUID="..dataStore.client_uuid end
+			if cUUID then url = url.."?homebr3wUUID="..cUUID end
 		end
-		jsondata = '{"homebr3wUUID":"'..dataStore.client_uuid..'"}'
-		data.homebr3wUUID = dataStore.client_uuid
+		jsondata = '{"homebr3wUUID":"'..cUUID..'"}'
+		data.homebr3wUUID = cUUID
 	end
 	if libraries["dkjson"] then
 		jsondata = libraries["dkjson"].encode(data)

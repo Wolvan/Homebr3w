@@ -1576,17 +1576,17 @@ function init()
 	line = 80
 	Screen.debugPrint(5, line, "Retrieving Homebr3w info...", WHITE, TOP_SCREEN)
 	tries = 0
-	success, tbl = false, {}
-	while (tries < config.downloadRetryCount.value) and (not success) do
+	local success_hbi, tbl_hbi = false, {}
+	while (tries < config.downloadRetryCount.value) and (not success_hbi) do
 		tries = tries + 1
-		success, tbl = getJSON("https://raw.githubusercontent.com/Wolvan/Homebr3w/master/data/blacklist.json")
+		success_hbi, tbl_hbi = getJSON("https://raw.githubusercontent.com/Wolvan/Homebr3w/master/data/blacklist.json", "GET")
 	end
 	
-	if not success then
+	if not success_hbi then
 		blacklistedApps = nil
 		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
 	else
-		blacklistedApps = tbl.blacklisted
+		blacklistedApps = tbl_hbi
 		saveTable(APP_DIR.."/blacklist.json", blacklistedApps)
 		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	end

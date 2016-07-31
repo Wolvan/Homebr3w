@@ -321,6 +321,7 @@ end
 table.dump = function(tbl, filename)
 	if not filename then filename = "tbl_dump.json" end
 	local jsonString = libraries["dkjson"].encode(tbl, { indent = true })
+	System.deleteFile(filename)
 	local file = io.open("/"..filename, FCREATE)
 	io.write(file, 0, jsonString, jsonString:len())
 	io.close(file)
@@ -342,6 +343,7 @@ function saveTable(filename, tbl)
 			System.createDirectory(currentPath)
 		end
 	end
+	System.deleteFile(filename)
 	local file = io.open(filename, FCREATE)
 	io.write(file, 0, jsonString, jsonString:len())
 	io.close(file)

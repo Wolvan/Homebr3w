@@ -8,6 +8,9 @@ You can also use the .3ds version for a flashcard or the .3dsx version for *hax.
 
 Note: The .3dsx version does not support launching freeShop through it, the option is disabled.
 
+## Nightlies
+Nightlies are available at [the official automatic Nightly build page](https://wolvan.github.io/Homebr3w/build/) and build whenever changes get pushed to the `master` branch
+
 ##Analytics
 This app generates a UUID for each Homebr3w client on first launch which will then be sent to TitleDB.com.
 

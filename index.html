@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Homebr3w : A Homebrew browser for 3ds">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Homebr3w</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/Wolvan/Homebr3w">View on GitHub</a>
+
+          <h1 id="project_title">Homebr3w</h1>
+          <h2 id="project_tagline">A Homebrew browser for 3ds</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/Wolvan/Homebr3w/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/Wolvan/Homebr3w/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="homebr3w" class="anchor" href="#homebr3w" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Homebr3w</h1>
+
+<p>Download and install Homebrew Apps for 3ds easily! App based on <a href="https://github.com/Rinnegatamante/lpp-3ds">lpp-3ds</a></p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Simply download the .cia file from the <a href="https://github.com/Wolvan/Homebr3w/releases">releases page</a> and install it with your favorite .cia Installer, for example FBI. You can also just scan the QR Code from the releases page as well.</p>
+
+<p>You can also use the .3ds version for a flashcard or the .3dsx version for *hax.</p>
+
+<p>Note: The .3dsx version does not support launching freeShop through it, the option is disabled.</p>
+
+<h2>
+<a id="analytics" class="anchor" href="#analytics" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Analytics</h2>
+
+<p>This app generates a UUID for each Homebr3w client on first launch which will then be sent to TitleDB.com.</p>
+
+<p>The UUID will be used to collect pseudo-anonymous data to get an idea of how many people use this app, how much people install apps and the like. <strong>If you do not want to be tracked using this, you can turn the UUID sending off in the Settings Menu!</strong></p>
+
+<p>You can also regenerate the UUID if you delete the <code>client_uuid</code> entry from <code>SDMC:/Homebr3w/data.json</code>, which causes a new ID to be generated for you.</p>
+
+<h2>
+<a id="differences-between-builds" class="anchor" href="#differences-between-builds" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Differences between Builds</h2>
+
+<p>There are 2 different builds available, the <code>.3ds</code>/<code>.cia</code> build and the <code>.3dsx</code> NH(2) Build.</p>
+
+<p><code>.3ds</code> for Flashcards and <code>.cia</code> to install to Homemenu are identical in functionality and have the full set of features available.</p>
+
+<p><code>.3dsx</code> is slightly limited in it's functionality as it is not able to install or launch <code>.cia</code>'s from the Homemenu. The functionality is automatically disabled in the <code>.3dsx</code> builds.</p>
+
+<h2>
+<a id="build-instructions" class="anchor" href="#build-instructions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build instructions</h2>
+
+<p>The building is made possible through a <code>make</code> script, meaning you need to have <code>make</code> installed and in your path. If you already use devkitArm then you are good to go</p>
+
+<p>Just run <code>make</code> (or <code>make all</code>/<code>make build</code>) to get your binaries in the build directory</p>
+
+<p><code>build 3ds</code> and <code>build cia</code> are also available in case not all binaries need to be built. <code>built 3dsx</code> is currently not available due to conflicts with lpp-3ds's networking features on *hax.</p>
+
+<p>You can also use <code>make clean</code> to remove all built files.</p>
+
+<h2>
+<a id="credits" class="anchor" href="#credits" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Credits</h2>
+
+<p><a href="https://github.com/Rinnegatamante/">Rinnegatamante</a> - for making <a href="https://github.com/Rinnegatamante/lpp-3ds">lpp-3ds</a></p>
+
+<p><a href="https://github.com/ksanislo">ksanislo</a> - for making TitleDB.com</p>
+
+<p><a href="https://github.com/yellows8">yellows8</a> - for the base of the Icon and Banner</p>
+
+<p>3DSGuy - for converting the Wii HBLauncher's theme to CWAV</p>
+
+<p><a href="https://titledb.com/">TitleDB.com</a> - as Database to pull the apps from</p>
+
+<p>The people from the /hbg/ Discord - Beta testing</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Homebr3w maintained by <a href="https://github.com/Wolvan">Wolvan</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>

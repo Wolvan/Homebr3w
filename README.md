@@ -16,7 +16,7 @@ This app generates a UUID for each Homebr3w client on first launch which will th
 
 The UUID will be used to collect pseudo-anonymous data to get an idea of how many people use this app, how much people install apps and the like. **If you do not want to be tracked using this, you can turn the UUID sending off in the Settings Menu!**
 
-You can also regenerate the UUID if you delete the `client_uuid` entry from `SDMC:/Homebr3w/data.json`, which causes a new ID to be generated for you.
+You can also regenerate the UUID if you delete the `client_uuid` entry from `SDMC:/3ds/data/Homebr3w/data.json`, which causes a new ID to be generated for you.
 
 ## Differences between Builds
 There are 2 different builds available, the `.3ds`/`.cia` build and the `.3dsx` NH(2) Build.

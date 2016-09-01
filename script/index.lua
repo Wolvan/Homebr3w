@@ -26,7 +26,7 @@ local GREEN = Color.new(55,255,0)
 local BLUE = Color.new(70,50,250)
 
 local APP_VERSION = "1.4.0"
-local APP_DIR = "/Homebr3w"
+local APP_DIR = "/3ds/data/Homebr3w"
 local APP_CACHE = APP_DIR.."/Cache"
 local APP_CONFIG = APP_DIR.."/config.json"
 local APP_CIA_DIR = APP_DIR.."/CIAs"
@@ -1521,6 +1521,11 @@ function init()
 	
 	local line = 5
 	Screen.debugPrint(5, line, "Initialising Homebr3w, please wait...", WHITE, TOP_SCREEN)
+	
+	-- Migrate Homebr3w Data Dir
+	System.createDirectory("/3ds")
+	System.createDirectory("/3ds/data")
+	System.renameDirectory("/Homebr3w", APP_DIR)
 	
 	line = 20
 	Screen.debugPrint(5, line, "Checking Wi-Fi...", WHITE, TOP_SCREEN)

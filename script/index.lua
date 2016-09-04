@@ -501,6 +501,56 @@ end
 
 local useragent = "Connection: keep-alive\nUser-Agent: Homebr3w/"..APP_VERSION
 --[[
+	Function to retrieve data through sockets
+]]--
+function socketRequest(fullurl, method, data)
+	local function splitURL(fullurl)
+		local url = fullurl:gsub("https?://", "")
+		local host = url:sub(1, url:find("/") - 1)
+		local remotepath = url:sub(url:find("/"), -1)
+		return host, remotepath
+	end
+	
+	Socket.init()
+
+	local port = 80
+	if fullurl:startsWith("https://") then port = 443 end
+	local host, rpath = splitURL(fullurl)
+	
+	local skt = Socket.connect(host, port)
+	local request = ""
+	request = request..method.." "..rpath.." HTTP/1.1\n"
+	request = request.."Host: "..host.."\n"
+	request = request..useragent.."\n"
+	if method == "POST" then
+		request = request.."Content-Type: text/plain\n"
+		request = request.."Content-Length: "..data:len().."\n"
+		request = request.."\n"
+		request = request..data
+	end
+	
+	Socket.send(skt, request)
+	
+	local raw_data = ""
+	while raw_data == "" do
+		raw_data = raw_data..Socket.receive(skt, 8192)
+	end
+	
+	local dwnld_data = raw_data
+	local retry = 0
+	while dwnld_data ~= "" or retry < 1000 do
+		dwnld_data = Socket.receive(skt, 8192)
+		raw_data = raw_data..dwnld_data
+		if dwnld_data == "" then
+			retry = retry + 1
+		else
+			retry = 0
+		end
+	end
+	
+end
+
+--[[
 	Function to download File from Internet
 ]]--
 function getFile(path, downloadURL, method, data)

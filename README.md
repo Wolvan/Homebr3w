@@ -23,7 +23,7 @@ There are 2 different builds available, the `.3ds`/`.cia` build and the `.3dsx` 
 
 `.3ds` for Flashcards and `.cia` to install to Homemenu are identical in functionality and have the full set of features available.
 
-`.3dsx` is slightly limited in it's functionality as it is not able to install or launch `.cia`'s from the Homemenu. The functionality is automatically disabled in the `.3dsx` builds.
+`.3dsx` is slightly limited in its functionality as it is not able to install or launch `.cia`'s from the Homemenu. The functionality is automatically disabled in the `.3dsx` builds.
 
 ##Build instructions
 The building is made possible through a `make` script, meaning you need to have `make` installed and in your path. If you already use devkitArm then you are good to go

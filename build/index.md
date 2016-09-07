@@ -7,8 +7,8 @@ Nightly builds are generated automatically through [Travis-CI](https://travis-ci
 
 ## Warning: These builds may be unstable and may contain bugs. If you use these builds and find any problems, please open a new Issue at [https://github.com/Wolvan/Homebr3w/issues](https://github.com/Wolvan/Homebr3w/issues)
 
-Latest commit: [#8f94255](https://github.com/Wolvan/Homebr3w/commit/8f94255eff45c15cfa1cf5d90d694108af369e75)<br>
-Build date: Tue Sep  6 20:27:55 UTC 2016
+Latest commit: [#c1b5379](https://github.com/Wolvan/Homebr3w/commit/c1b537925113bfe3b0ed1516b410e7a0c4b34596)<br>
+Build date: Wed Sep  7 03:56:47 UTC 2016
 
 | Download Link | File Size |
 |---------------|-----------|

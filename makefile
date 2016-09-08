@@ -104,6 +104,7 @@ cia: banner romfs
 	@echo Building .3dsx
 	rm -rf $(BUILD_DIR)/$(OUTFILE_NAME)
 	cp -r "$(SRC_DIR)" "$(BUILD_DIR)/$(OUTFILE_NAME)"
+	mv "$(BUILD_DIR)/$(OUTFILE_NAME)/Descriptor.xml" "$(BUILD_DIR)/$(OUTFILE_NAME)/$(OUTFILE_NAME).xml" 
 	cp "$(TMP_DIR)/icon.bin" "$(BUILD_DIR)/$(OUTFILE_NAME)/$(OUTFILE_NAME).smdh"
 	cp "$(BUILDTOOLS_DIR)/lpp3ds/lpp-3ds.3dsx" "$(BUILD_DIR)/$(OUTFILE_NAME)/$(OUTFILE_NAME).3dsx"
 3dsxpack: 3dsx

@@ -200,6 +200,10 @@ local config = {
 	enableAnalytics = {
 		text = "Enable analytics",
 		value = true
+	},
+	hideUninstallWarning = {
+		text = "Skip warning before uninstall",
+		value = false
 	}
 }
 local config_backup = {}
@@ -947,6 +951,31 @@ end
 	to SD
 ]]--
 function uninstall(titleid)
+
+	if not config.hideUninstallWarning.value then
+		Screen.refresh()
+		Screen.clear(TOP_SCREEN)
+		Screen.clear(BOTTOM_SCREEN)
+		Screen.waitVblankStart()
+		Screen.flip()
+		local errorMsg = "WATCH OUT!\n \nYou are about to uninstall\nan app. If it was not you who\ninstalled it in the first place it\nmight be a titleid conflict and could\ndelete one of your games or other apps!\nYou can hide this warning\nfrom the settings.\n \nPress A to continue\nPress B to go back"
+		local splitString = errorMsg:split("\n")
+		for k,v in pairs(splitString) do
+			Screen.debugPrint(5, ((k-1)*15)+5, v, WHITE, TOP_SCREEN)
+		end
+		local runloop = true
+		while runloop do
+			pad = Controls.read()
+			if Controls.check(pad, KEY_B) and not Controls.check(oldpad, KEY_B) then
+				Screen.waitVblankStart()
+				Screen.flip()
+				main()
+			elseif Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
+				runloop = false
+			end
+			oldpad = pad
+		end
+	end
 	
 	oldpad = pad
 	Screen.waitVblankStart()

@@ -3,7 +3,7 @@ BasicInfo:
   CompanyCode             : "00"
   ProductCode             : "CTR-P-HBRW"
   ContentType             : Application
-  Logo                    : Nintendo # Nintendo / Licensed / Distributed / iQue / iQueForSystem
+  Logo                    : Homebrew # Nintendo / Licensed / Distributed / iQue / iQueForSystem
 
 TitleInfo:
   UniqueId                : 0x1309
@@ -29,7 +29,7 @@ AccessControlInfo:
 
 SystemControlInfo:
   SaveDataSize: 128KB
-  RemasterVersion: 0
+  RemasterVersion: 2
   StackSize: 0x40000
   
 # DO NOT EDIT BELOW HERE OR PROGRAMS WILL NOT LAUNCH (most likely)

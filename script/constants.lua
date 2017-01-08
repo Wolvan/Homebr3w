@@ -62,5 +62,11 @@ else
     BUILD = BUILDS.UNKNOWN
 end
 
+-- Home Text
+HOME = "Homemenu"
+if BUILD ~= BUILDS.CIA then
+	HOME = "Homebrew Launcher"
+end
+
 --User agent that is being used for HTTP requests
 USERAGENT = "Connection: keep-alive\nUser-Agent: Homebr3w/"..APP_VERSION

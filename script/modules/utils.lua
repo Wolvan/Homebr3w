@@ -89,7 +89,7 @@ end
     it shows an error message if wifi is not active,
     this can be disabled by passing 'true' to the function
 ]]--
-checkWifi = function(dontErrorOnNoNetwork)
+utils.checkWifi = function (dontErrorOnNoNetwork)
     if not Network.isWifiEnabled() then
         if dontErrorOnNoNetwork then
             showError("Wi-Fi is disabled. Restart and try again.\nPress A to go back to "..home..".", function()
@@ -110,7 +110,7 @@ end
 	YYYY-MM-DD hh:mm:ss and turn it into
 	a unix timestamp
 ]]--
-function makeUnixTimestampFromTitle(datestr)
+utils.makeUnixTimestampFromTitle = function (datestr)
 	local pattern = "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
 	local runyear, runmonth, runday, runhour, runminute, runseconds = datestr:match(pattern)
 	return os.time({year = runyear, month = runmonth, day = runday, hour = runhour, min = runminute, sec = runseconds})
@@ -120,13 +120,18 @@ end
     Function to download File from Internet and
     save it to SD Card
 ]]--
-utils.getFile = function(path, downloadURL, method, data)
+utils.getFile = function (path, downloadURL, method, data)
     if not method or (method ~= "GET" and method ~= "POST" and method ~= "HEAD") then method = "GET" end
     if not data then data = {} end
     System.deleteFile(path)
     local jsondata = "[]"
     if config.enableAnalytics.value then
-        local cUUID = dataStore.client_uuid or "00000000-0000-0000-0000-000000000000"
+        local cUUID = "00000000-0000-0000-0000-000000000000"
+        if dataStore then
+             if dataStore.client_uuid then
+                cUUID = dataStore.client_uuid
+             end
+        end
         if downloadURL:find("?") then
             if cUUID then downloadURL = downloadURL.."&homebr3wUUID="..cUUID end
         else
@@ -156,7 +161,7 @@ end
     Function that gets a json string from
     the web and decodes it into a table
 ]]--
-utils.getJSON = function(url, method, data)
+utils.getJSON = function (url, method, data)
     if not method or (method ~= "GET" and method ~= "POST" and method ~= "HEAD") then method = "POST" end
     if not data then
         data = {
@@ -167,7 +172,12 @@ utils.getJSON = function(url, method, data)
     local tbl = {}
     local jsondata = "[]"
     if config.enableAnalytics.value then
-        local cUUID = dataStore.client_uuid or "00000000-0000-0000-0000-000000000000"
+        local cUUID = "00000000-0000-0000-0000-000000000000"
+        if dataStore then
+             if dataStore.client_uuid then
+                cUUID = dataStore.client_uuid
+             end
+        end
         if url:find("?") then
             if cUUID then url = url.."&homebr3wUUID="..cUUID end
         else
@@ -186,4 +196,56 @@ utils.getJSON = function(url, method, data)
         return false, tbl
     end
     return true, tbl
+end
+
+--[[
+    Save a table as JSON file to the SD Card
+]]--
+utils.saveTable = function (filename, tbl)
+	if not tbl then tbl = {} end
+	if not filename then filename = APP_DIR.."/tbl.json" end
+	local jsonString = libraries["dkjson"].encode(tbl, { indent = true })
+	local currentPath = ""
+	local splitPath = filename:split("/")
+	for i = 1, #splitPath - 1 do
+		if splitPath[i] then
+			currentPath = currentPath.."/"..splitPath[i]
+			System.createDirectory(currentPath)
+		end
+	end
+	System.deleteFile(filename)
+	local file = io.open(filename, FCREATE)
+	io.write(file, 0, jsonString, jsonString:len())
+	io.close(file)
+end
+--[[
+    Load a JSON file from the SD card and parse
+    it to a table. A default table can be specified
+    that gets returned when loading from SD fails for
+    any reason.
+]]--
+utils.loadTable = function (filename, defaulttbl)
+	if not filename then filename = APP_DIR.."/tbl.json" end
+	if not defaulttbl then defaulttbl = {} end
+	if not System.doesFileExist(filename) then
+		utils.saveTable(filename, defaulttbl)
+	end
+	local file = io.open(filename, FREAD)
+
+	local filesize = 0
+	filesize = tonumber(io.size(file))
+	if filesize == 0 then
+		io.close(file)
+		utils.saveTable(filename, defaulttbl)
+		file = io.open(filename, FREAD)
+	end
+
+	local file_contents = io.read(file, 0, tonumber(io.size(file)))
+	io.close(file)
+	local loaded_config = libraries["dkjson"].decode(file_contents)
+	if type(loaded_config) == "table" then
+		return loaded_config
+	else
+		return nil
+	end
 end

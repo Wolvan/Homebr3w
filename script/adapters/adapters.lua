@@ -17,7 +17,52 @@
     and download adapters
 ]]--
 
-local function lScript(filepath)
+local Adapters = {}
+
+Adapter = {
+    __type = "Adapter",
+    new = function (self, o) --Create Instance function. Override this in your custom menu instance only if necessary.
+        o = o or {
+            id = "unknown"
+        }
+        if Adapters[o.id] then
+            return nil, "Adapter is already defined"
+        end
+        setmetatable(o, self)
+        self.__index = self
+        Adapters[o.id] = o
+        return o
+    end,
+    name = "Unknown adapter",
+    shutdown = function (self)
+        -- Dummy shutdown function that should be overwritten when defining an adapter
+    end,
+    init = function (self)
+        -- Dummy init function that should be overwritten when defining an adapter
+    end,
+    destroy = function (self)
+        currentlyActiveAdapter = lastActiveAdapter
+        Adapters[self.id] = nil
+    end
+}
+
+local function listAdapters ()
+    local t = {}
+    for k,v in pairs(Adapters) do
+        t.insert(k)
+    end
+    return t
+end
+
+local function getAdapter (adpt)
+    if Adapters[adpt] then return Adapters[adpt] else return nil end
+end
+
+adapters = {}
+adapters.listAdapters = listAdapters
+adapters.getAdapter = getAdapter
+
+local function lScript (filepath)
     if BUILD ~= BUILDS.CIA then
 		filepath = System.currentDirectory().."adapters/"..filepath
 	else

@@ -17,8 +17,10 @@
     Requires dkjson to be loaded
 ]]--
 
---Global variable that broadcasts update state
-canUpdate = false
+--Updater namespace with variable that broadcasts update state
+updater = {
+    canUpdate = false
+}
 
 --[[
     Function to parse SemVer compliant
@@ -27,7 +29,7 @@ canUpdate = false
     {major, minor, version} which can be used by
     isUpdateAvailable
 ]]--
-function parseVersion(verString)
+local function parseVersion(verString)
     if verString == nil or verString == "" then
         verString = "0.0.0"
     end
@@ -49,7 +51,7 @@ end
     Compare two version tables and check if one is older
     than the other and if an update is required
 ]]--
-function isUpdateAvailable(localVersion, remoteVersion)
+local function isUpdateAvailable(localVersion, remoteVersion)
     if remoteVersion.major > localVersion.major then
         return true
     end
@@ -62,12 +64,12 @@ function isUpdateAvailable(localVersion, remoteVersion)
     return false
 end
 
-function checkForUpdate()
+local function checkForUpdate()
     tries = 0
     success, tbl = false, {}
     while (tries < config.downloadRetryCount.value) and (not success) do
         tries = tries + 1
-        success, tbl = getJSON("https://api.github.com/repos/Wolvan/Homebr3w/releases/latest")
+        success, tbl = utils.getJSON("https://api.github.com/repos/Wolvan/Homebr3w/releases/latest")
     end
 
     if not success then
@@ -75,7 +77,11 @@ function checkForUpdate()
     else
         local locVer = parseVersion(APP_VERSION)
         local remVer = parseVersion(tbl.tag_name)
-        canUpdate = isUpdateAvailable(locVer, remVer)
+        updater.canUpdate = isUpdateAvailable(locVer, remVer)
         return true
     end
 end
+
+updater.parseVersion = parseVersion
+updater.isUpdateAvailable = isUpdateAvailable
+updater.checkForUpdate = checkForUpdate

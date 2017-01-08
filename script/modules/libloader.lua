@@ -62,7 +62,8 @@ libraries = {}
 
 local queue = {}
 
-local function getLib(lib)
+local function getLib(lib, quiet)
+    if not quiet then Screen.debugPrint(5, 20, "Downloading "..lib.name, TEXT_COLORS.WHITE, BOTTOM_SCREEN) end
     System.createDirectory(APP_DIR)
     System.createDirectory(APP_LIBS_DIR)
     local path = APP_LIBS_DIR.."/"..lib.filename
@@ -87,11 +88,24 @@ local function getLib(lib)
     return success
 end
 
-function loadLib(lib, dontCrashOnFail)
+libloader = {}
+
+libloader.loadLib = function(lib, dontCrashOnFail)
+    if libraries[lib.name] then return true, "Already loaded" end
     if not System.doesFileExist(APP_LIBS_DIR.."/"..lib.filename) then
+        local filepath = "Libraries/"..lib.filename
+        if BUILD ~= BUILDS.CIA then
+            filepath = System.currentDirectory()..filepath
+        else
+            filepath = "romfs:/"..filepath
+        end
+        if System.doesFileExist(filepath) then
+            libraries[lib.name] = dofile(filepath)
+            return true
+        end
         if not getLib(lib) then
             if dontCrashOnFail then return false end
-            showError("Failed to download library!\nUnable to continue, please\ntry restarting the app and\ntry again.\n \nPress A to go back to "..home..".", function()
+            showError("Failed to download library!\nUnable to continue, please\ntry restarting the app and\ntry again.\n \nLibrary: "..lib.name.."\n \nPress A to go back to "..home..".", function()
                 pad = Controls.read()
                 if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
                     System.exit()
@@ -104,16 +118,18 @@ function loadLib(lib, dontCrashOnFail)
     return true
 end
 
-function queueLib(lib, dontCrashOnFail)
+libloader.queueLib = function (lib, dontCrashOnFail)
     table.insert(queue, {
         library = lib,
         dontCrash = dontCrashOnFail
     })
 end
-
-function doQueue()
+libloader.doQueue = function ()
     for k,v in pairs(queue) do
-        loadLib(v.library, v.dontCrash)
+		Screen.clear(BOTTOM_SCREEN)
+        Screen.debugPrint(5, 5, "Checking library "..k.." of "..#queue.."...", TEXT_COLORS.WHITE, BOTTOM_SCREEN)
+        libloader.loadLib(v.library, v.dontCrash)
     end
+    Screen.clear(BOTTOM_SCREEN)
     queue = {}
 end

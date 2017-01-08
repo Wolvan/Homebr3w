@@ -29,10 +29,11 @@ local function lScript(filepath)
 end
 
 local SCRIPTS_TO_LOAD = {
+	"polyfills/luafunctions.lua",
 	"polyfills/string.lua",
 	"polyfills/table.lua",
 	"constants.lua",
-	"default_config.lua",
+	"config.lua",
 	"modules/utils.lua",
 	"modules/libloader.lua",
 	"modules/updater.lua",
@@ -44,4 +45,16 @@ for k,v in pairs(SCRIPTS_TO_LOAD) do
 	lScript(v)
 end
 
-showError("Work in progress!\nStill working on modularizing,\nplease be patient.")
+--[[
+	A lot of functionality is based on dkjson, so we make
+	sure that it is definitely loaded first
+]]--
+libloader.loadLib({
+	name = "dkjson",
+	filename = "dkjson.lua",
+	downloadPath = "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3",
+	type = LIB_TYPES.LIBRARY
+})
+
+views.changeView("init")
+--showError("Work in progress!\nStill working on modularizing,\nplease be patient.")

@@ -1,3 +1,4 @@
+-- TODO: Modularize this entire file, then remove it
 --[[
     Homebr3w
 
@@ -11,37 +12,6 @@
 
     Source available at https://github.com/Wolvan/Homebr3w
 ]]--
-
---[[
-	Homebr3w Bootstrap
-
-	This file is responsible to bootstrap Homebr3w and
-	load all required files to be usable
-]]
-
-local function lScript(filepath)
-    if System.checkBuild() ~= 1 then
-		filepath = System.currentDirectory()..filepath
-	else
-		filepath = "romfs:/"..filepath
-	end
-    dofile(filepath)
-end
-
-local SCRIPTS_TO_LOAD = {
-	"polyfills/string.lua",
-	"polyfills/table.lua",
-	"constants.lua",
-	"defaultConfig.lua",
-	"modules/utils.lua",
-	"modules/libloader.lua",
-	"modules/updater.lua",
-	"adapters/adapters.lua"
-}
-
-for k,v in pairs(SCRIPTS_TO_LOAD) do
-	lScript(v)
-end
 
 local REQUIRED_LIBRARIES = {
 	{
@@ -94,90 +64,11 @@ local sortMode = 3
 local currentFilter = ""
 local uninstallMode = false
 
-local home = "Homemenu"
-if System.checkBuild() ~= 1 then
-	home = "Homebrew Launcher"
-end
-
 local pad = Controls.read()
 local oldpad = pad
 local kbState = nil
 local scrollTimer = Timer.new()
 local isScrolling = false
-
---[[
-	Functions to save and load any table to or from
-	a JSON encoded file somewhere on the SD card
-]]--
-function saveTable(filename, tbl)
-	if not tbl then tbl = {} end
-	if not filename then filename = APP_DIR.."/tbl.json" end
-	local jsonString = libraries["dkjson"].encode(tbl, { indent = true })
-	local currentPath = ""
-	local splitPath = filename:split("/")
-	for i = 1, #splitPath - 1 do
-		if splitPath[i] then
-			currentPath = currentPath.."/"..splitPath[i]
-			System.createDirectory(currentPath)
-		end
-	end
-	System.deleteFile(filename)
-	local file = io.open(filename, FCREATE)
-	io.write(file, 0, jsonString, jsonString:len())
-	io.close(file)
-end
-function loadTable(filename, defaulttbl)
-	if not filename then filename = APP_DIR.."/tbl.json" end
-	if not defaulttbl then defaulttbl = {} end
-	if not System.doesFileExist(filename) then
-		saveTable(filename, defaulttbl)
-	end
-	local file = io.open(filename, FREAD)
-	
-	local filesize = 0
-	filesize = tonumber(io.size(file))
-	if filesize == 0 then
-		io.close(file)
-		saveTable(filename, defaulttbl)
-		file = io.open(filename, FREAD)
-	end
-	
-	local file_contents = io.read(file, 0, tonumber(io.size(file)))
-	io.close(file)
-	local loaded_config = libraries["dkjson"].decode(file_contents)
-	if type(loaded_config) == "table" then
-		return loaded_config
-	else
-		return nil
-	end
-end
-
---[[
-	Functions to save and load config from a config
-	file. The config table gets encoded as JSON file
-	and saved to the SD.
-	Loading reads that file (or creates it if it
-	doesn't exist before reading), decodes the JSON
-	and then overwrites each value of the config
-	table that is defined in the decoded JSON Object.
-	This way, settings that are not stored in the config
-	yet just use the default value set in the config table.
-]]--
-function saveConfig()
-	saveTable(APP_CONFIG, config)
-end
-function loadConfig()
-	local loaded_config = loadTable(APP_CONFIG, config)
-	if type(loaded_config) == "table" then
-		for k,v in pairs(loaded_config) do
-			config[k] = v
-		end
-	else
-		return false
-	end
-	return true
-end
-
 
 --[[
 	Check App State to close the App in case
@@ -191,9 +82,6 @@ function checkForExit()
 		System.exit()
 	end
 end
-
-
-
 
 --[[
 	Get a title from the Applist by titleid
@@ -253,36 +141,6 @@ function drawQRToTopScreen(tid)
 			oldpad = pad
 		end
 	end
-end
-
-
--- END UTILITY CODE DECLARATION
-
--- BEGIN MAIN PROGRAM CODE
---[[
-	Go through all of the icon files in the
-	Cache directory and download icons that
-	are missing.
-]]--
-function checkLibraries()
-
-	for k,v in pairs(REQUIRED_LIBRARIES) do
-		Screen.clear(BOTTOM_SCREEN)
-		Screen.debugPrint(5, 5, "Checking library "..k.." of "..#REQUIRED_LIBRARIES.."...", WHITE, BOTTOM_SCREEN)
-		if not System.doesFileExist(APP_LIBS_DIR.."/"..v.filename) then
-			Screen.debugPrint(5, 20, "Downloading "..v.name, WHITE, BOTTOM_SCREEN)
-			if not getLib(v) then
-				showError("Failed to download library!\nUnable to continue, please\ntry restarting the app and\ntry again.\n \nPress A to go back to "..home..".", function()
-					pad = Controls.read()
-					if Controls.check(pad, KEY_A) and not Controls.check(oldpad, KEY_A) then
-						System.exit()
-					end
-					oldpad = pad
-				end)
-			end
-		end
-	end
-	Screen.clear(BOTTOM_SCREEN)
 end
 
 --[[
@@ -1126,42 +984,6 @@ function init()
 	Screen.waitVblankStart()
 	Screen.flip()
 	
-	local line = 5
-	Screen.debugPrint(5, line, "Initialising Homebr3w, please wait...", WHITE, TOP_SCREEN)
-	
-	-- Migrate Homebr3w Data Dir
-	System.createDirectory("/3ds")
-	System.createDirectory("/3ds/data")
-	System.renameDirectory("/Homebr3w", APP_DIR)
-	
-	line = 20
-	Screen.debugPrint(5, line, "Checking Wi-Fi...", WHITE, TOP_SCREEN)
-	checkWifi()
-	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	
-	line = 35
-	Screen.debugPrint(5, line, "Checking Libraries...", WHITE, TOP_SCREEN)
-	checkLibraries()
-	for k,v in pairs(REQUIRED_LIBRARIES) do
-		libraries[v.name] = dofile(APP_LIBS_DIR.."/"..v.filename)
-	end
-	Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	
-	line = 50
-	Screen.debugPrint(5, line, "Loading config...", WHITE, TOP_SCREEN)
-	if loadConfig() then
-		config_backup = deepcopy(config)
-		sortMode = config.defaultSortMode.value
-		dataStore = loadTable(APP_DIR.."/data.json", dataStore)
-		if not dataStore.client_uuid then
-			dataStore.client_uuid = createUUID()
-			saveTable(APP_DIR.."/data.json", dataStore)
-		end
-		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-	else
-		Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
-	end
-	
 	line = 65
 	Screen.debugPrint(5, line, "Retrieving Applist...", WHITE, TOP_SCREEN)
 	local tries = 0
@@ -1202,29 +1024,7 @@ function init()
 		saveTable(APP_DIR.."/blacklist.json", blacklistedApps)
 		Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
 	end
-	
-	line = 95
-	Screen.debugPrint(5, line, "Checking for Updates...", WHITE, TOP_SCREEN)
-	if config.enableUpdateCheck.value then
-		tries = 0
-		success, tbl = false, {}
-		while (tries < config.downloadRetryCount.value) and (not success) do
-			tries = tries + 1
-			success, tbl = getJSON("https://api.github.com/repos/Wolvan/Homebr3w/releases/latest")
-		end
-		
-		if not success then
-			Screen.debugPrint(270, line, "[FAILED]", RED, TOP_SCREEN)
-		else
-			locVer = parseVersion(APP_VERSION)
-			remVer = parseVersion(tbl.tag_name)
-			canUpdate = isUpdateAvailable(locVer, remVer)
-			Screen.debugPrint(270, line, "[OK]", GREEN, TOP_SCREEN)
-		end
-	else
-		Screen.debugPrint(270, line, "[SKIPPED]", YELLOW, TOP_SCREEN)
-	end
-	
+
 	line = 110
 	Screen.debugPrint(5, line, "Checking cache...", WHITE, TOP_SCREEN)
 	lastUpdateCache = loadTable(APP_CACHE.."/last_updated.json", lastUpdateCache)
@@ -1262,5 +1062,4 @@ function init()
 	main()
 end
 
--- END MAIN PROGRAM CODE
 init()

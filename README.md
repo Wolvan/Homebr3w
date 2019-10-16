@@ -1,7 +1,7 @@
-#Homebr3w
+# Homebr3w
 Download and install Homebrew Apps for 3ds easily! App based on [lpp-3ds](https://github.com/Rinnegatamante/lpp-3ds)
 
-##Usage
+## Usage
 Simply download the .cia file from the [releases page](https://github.com/Wolvan/Homebr3w/releases) and install it with your favorite .cia Installer, for example FBI. You can also just scan the QR Code from the releases page as well.
 
 You can also use the .3ds version for a flashcard or the .3dsx version for *hax.
@@ -25,7 +25,7 @@ There are 2 different builds available, the `.3ds`/`.cia` build and the `.3dsx` 
 
 `.3dsx` is slightly limited in its functionality as it is not able to install or launch `.cia`'s from the Homemenu. The functionality is automatically disabled in the `.3dsx` builds.
 
-##Build instructions
+## Build instructions
 The building is made possible through a `make` script, meaning you need to have `make` installed and in your path. If you already use devkitArm then you are good to go
 
 Just run `make` (or `make all`/`make build`) to get your binaries in the build directory
@@ -34,7 +34,7 @@ Just run `make` (or `make all`/`make build`) to get your binaries in the build d
 
 You can also use `make clean` to remove all built files.
 
-##Credits
+## Credits
 [Rinnegatamante](https://github.com/Rinnegatamante/) - for making [lpp-3ds](https://github.com/Rinnegatamante/lpp-3ds)
 
 [ksanislo](https://github.com/ksanislo) - for making TitleDB.com
